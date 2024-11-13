@@ -69,41 +69,6 @@ class User(BaseModel):
     clickup_access_token: str | None = None
 
 
-@app.get('/')
-async def home():
-    return 'Welcome to the ClickUp OAuth example!'
-
-
-@app.get("/management/v1/clickup/oauth")
-async def clickup_oauth_redirect():
-    # Redirect the user to ClickUp's authorization URL
-    auth_url = f"{authorization_base_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
-    return RedirectResponse(auth_url)
-
-
-@app.get("/management/v1/clickup/callback")
-async def clickup_oauth_callback(request: Request):
-    # Get the authorization code from the callback query parameters
-    auth_code = request.query_params.get("code")
-    if not auth_code:
-        raise HTTPException(status_code=400, detail="Authorization code not found.")
-
-    # Exchange the authorization code for an access token
-    token_response = requests.post(token_url, data={
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "code": auth_code,
-        "redirect_uri": redirect_uri
-    })
-
-    if token_response.status_code == 200:
-        access_token = token_response.json().get("access_token")
-        return {"access_token": access_token}
-    else:
-        error_detail = token_response.json()
-        raise HTTPException(status_code=token_response.status_code, detail=error_detail)
-
-
 def verify_password(password):
     # This will be replaced by LDAP
     return True
@@ -161,6 +126,44 @@ async def get_current_active_user(
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+@app.get('/')
+async def home():
+    return 'Welcome to the ClickUp OAuth example!'
+
+
+@app.get("/management/v1/clickup/oauth")
+async def clickup_oauth_redirect(
+        current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    # Redirect the user to ClickUp's authorization URL
+    auth_url = f"{authorization_base_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
+    return RedirectResponse(auth_url)
+
+
+@app.get("/management/v1/clickup/callback")
+async def clickup_oauth_callback(request: Request):
+    # Get the authorization code from the callback query parameters
+    auth_code = request.query_params.get("code")
+    if not auth_code:
+        raise HTTPException(status_code=400, detail="Authorization code not found.")
+
+    # Exchange the authorization code for an access token
+    token_response = requests.post(token_url, data={
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": auth_code,
+        "redirect_uri": redirect_uri
+    })
+
+    if token_response.status_code == 200:
+        access_token = token_response.json().get("access_token")
+        # We update the user with the click_up access token
+        return {"access_token": access_token}
+    else:
+        error_detail = token_response.json()
+        raise HTTPException(status_code=token_response.status_code, detail=error_detail)
 
 
 @app.post("/management/v1/tokens")
