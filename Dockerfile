@@ -3,7 +3,7 @@ LABEL maintainer="jpuerto@psc.edu"
 LABEL org.opencontainers.image.source="https://github.com/pscedu/cpra.mp.management"
 
 WORKDIR /usr/src/app
-COPY requirements.txt
+COPY requirements.txt ./
 
 RUN mkdir -p cpra/mp/data && pip install -r requirements.txt \
     && python -m pip cache purge
