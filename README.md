@@ -1,1 +1,1 @@
-# cpra.mp.management
+# CPRA Master Plan Management API
