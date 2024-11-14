@@ -47,7 +47,7 @@ headers = {
 
 
 app = FastAPI()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/management/v1/tokens/")
 
 
 class Token(BaseModel):
@@ -130,30 +130,28 @@ async def get_current_active_user(
 
 @app.get('/')
 async def home():
-    return 'Welcome to the ClickUp OAuth example!'
+    return 'Welcome to the Management API!'
 
 
-@app.get("/management/v1/clickup/oauth")
-async def clickup_oauth_redirect(
+@app.get("/management/v1/clickup/oauth/")
+async def clickup_oauth_get_auth_url(
         current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     # Redirect the user to ClickUp's authorization URL
-    auth_url = f"{authorization_base_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
-    return RedirectResponse(auth_url)
+    clickup_oauth_url = f"{authorization_base_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
+    return {"clickup_oauth_url": clickup_oauth_url}
 
 
-@app.get("/management/v1/clickup/callback")
-async def clickup_oauth_callback(request: Request):
-    # Get the authorization code from the callback query parameters
-    auth_code = request.query_params.get("code")
-    if not auth_code:
-        raise HTTPException(status_code=400, detail="Authorization code not found.")
-
+@app.post("/management/v1/clickup/oauth/")
+async def clickup_oauth_post_oauth_code(
+        current_user: Annotated[User, Depends(get_current_active_user)],
+        oauth_code: str,
+):
     # Exchange the authorization code for an access token
     token_response = requests.post(token_url, data={
         "client_id": client_id,
         "client_secret": client_secret,
-        "code": auth_code,
+        "code": oauth_code,
         "redirect_uri": redirect_uri
     })
 
@@ -166,7 +164,19 @@ async def clickup_oauth_callback(request: Request):
         raise HTTPException(status_code=token_response.status_code, detail=error_detail)
 
 
-@app.post("/management/v1/tokens")
+@app.get("/management/v1/clickup/callback/")
+async def clickup_oauth_callback(
+        request: Request
+):
+    # Get the authorization code from the callback query parameters
+    oauth_code = request.query_params.get("code")
+    if not oauth_code:
+        raise HTTPException(status_code=400, detail="Authorization code not found.")
+    else:
+        return {"oauth_code": oauth_code}
+
+
+@app.post("/management/v1/tokens/")
 async def login_for_access_token(
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
@@ -186,7 +196,7 @@ async def login_for_access_token(
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
-@app.post("/management/v1/tokens/refresh", response_model=Token)
+@app.post("/management/v1/tokens/refresh/", response_model=Token)
 async def refresh_access_token(refresh_token: str):
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -207,7 +217,7 @@ async def refresh_access_token(refresh_token: str):
     new_refresh_token = create_token(
         data={"sub": user.username}, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     )
-    return Token(access_token=new_access_token, refresh_token=new_refresh_token, token_type="refresh")
+    return Token(access_token=new_access_token, refresh_token=new_refresh_token, token_type="bearer")
 
 
 @app.get("/users/me/", response_model=User)
