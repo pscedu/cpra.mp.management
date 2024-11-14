@@ -1,15 +1,11 @@
-import requests
-
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status, Request
-from fastapi.responses import RedirectResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
 import jwt
+import requests
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError, PyJWTError
-
 from pydantic import BaseModel
 
 # to get a string like this run:
@@ -29,21 +25,18 @@ fake_users_db = {
 }
 
 # ClickUp Settings
-client_id = '0D2C3KLO7ETCTIBR72Z6885TJYZ9JN4W'
-client_secret = 'Y7FKKTVWY49OP5HZ8IENCGNXP9M5J5JFIZLVPKTJZ9ZJCADN5RGMDESOZMMWM1FX'
-redirect_uri = 'http://localhost:5000/management/v1/clickup/callback'  # Ensure this matches your registered redirect URI
-authorization_base_url = 'https://app.clickup.com/api'
-token_url = 'https://app.clickup.com/api/v2/oauth/token'
+client_id = "0D2C3KLO7ETCTIBR72Z6885TJYZ9JN4W"
+client_secret = "Y7FKKTVWY49OP5HZ8IENCGNXP9M5J5JFIZLVPKTJZ9ZJCADN5RGMDESOZMMWM1FX"
+redirect_uri = "http://localhost:5000/management/v1/clickup/callback"
+authorization_base_url = "https://app.clickup.com/api"
+token_url = "https://app.clickup.com/api/v2/oauth/token"
 
 # ClickUp API token
-api_token = 'pk_89208365_SJ9TK5B5CCFAU13DD68WDH6GGXGSSY1W'
+api_token = "pk_89208365_SJ9TK5B5CCFAU13DD68WDH6GGXGSSY1W"
 # api_token = '82415788_78820e51167b40f8aa2e20575000f6e39a3c511d3333cce1214c56c8edf6f18e'
 
 # The headers, including the authorization token
-headers = {
-    'Authorization': api_token,
-    'Content-Type': 'application/json'
-}
+headers = {"Authorization": api_token, "Content-Type": "application/json"}
 
 
 app = FastAPI()
@@ -121,21 +114,21 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 
 
 async def get_current_active_user(
-        current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 
-@app.get('/')
+@app.get("/")
 async def home():
-    return 'Welcome to the Management API!'
+    return "Welcome to the Management API!"
 
 
 @app.get("/management/v1/clickup/oauth/")
 async def clickup_oauth_get_auth_url(
-        current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     # Redirect the user to ClickUp's authorization URL
     clickup_oauth_url = f"{authorization_base_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
@@ -144,16 +137,19 @@ async def clickup_oauth_get_auth_url(
 
 @app.post("/management/v1/clickup/oauth/")
 async def clickup_oauth_post_oauth_code(
-        current_user: Annotated[User, Depends(get_current_active_user)],
-        oauth_code: str,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    oauth_code: str,
 ):
     # Exchange the authorization code for an access token
-    token_response = requests.post(token_url, data={
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "code": oauth_code,
-        "redirect_uri": redirect_uri
-    })
+    token_response = requests.post(
+        token_url,
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": oauth_code,
+            "redirect_uri": redirect_uri,
+        },
+    )
 
     if token_response.status_code == 200:
         access_token = token_response.json().get("access_token")
@@ -165,9 +161,7 @@ async def clickup_oauth_post_oauth_code(
 
 
 @app.get("/management/v1/clickup/callback/")
-async def clickup_oauth_callback(
-        request: Request
-):
+async def clickup_oauth_callback(request: Request):
     # Get the authorization code from the callback query parameters
     oauth_code = request.query_params.get("code")
     if not oauth_code:
@@ -178,7 +172,7 @@ async def clickup_oauth_callback(
 
 @app.post("/management/v1/tokens/")
 async def login_for_access_token(
-        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     user = authenticate_user(fake_users_db, form_data.username, form_data.password)
     if not user:
@@ -211,17 +205,17 @@ async def refresh_access_token(refresh_token: str):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
 
     # Generate new access token
-    new_access_token = create_token(
+    access_token = create_token(
         data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    new_refresh_token = create_token(
+    refresh_token = create_token(
         data={"sub": user.username}, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     )
-    return Token(access_token=new_access_token, refresh_token=new_refresh_token, token_type="bearer")
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @app.get("/users/me/", response_model=User)
 async def read_users_me(
-        current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     return current_user
