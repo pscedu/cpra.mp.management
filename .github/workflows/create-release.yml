@@ -49,8 +49,3 @@ jobs:
       - name: Push image
         run: |
           docker push "${{ steps.prepare.outputs.image_tag }}"
-        with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./dist/${{ steps.prepare.outputs.package }}-py3-none-any.whl
-          asset_name: ${{ steps.prepare.outputs.package }}-py3-none-any.whl
-          asset_content_type: application/zip
