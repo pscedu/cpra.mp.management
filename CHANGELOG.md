@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/pscedu/cpra.mp.management/compare/v0.1.2...v0.1.3) (2024-11-18)
+
+
+### Bug Fixes
+
+* **General:** Add main.py ([b35282e](https://github.com/pscedu/cpra.mp.management/commit/b35282edccb90a666d41b3ead0da9e781b70f0ce))
+
 ## [0.1.2](https://github.com/pscedu/cpra.mp.management/compare/v0.1.1...v0.1.2) (2024-11-15)
 
 
