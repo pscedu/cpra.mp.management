@@ -1,19 +1,52 @@
+from http.client import HTTPException
+
+from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Union
 
 import jwt
 import requests
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError, PyJWTError
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
-# to get a string like this run:
-# openssl rand -hex 32
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+import json
+
+
+def load_config(file_path: str):
+    with open(file_path, "r") as f:
+        return json.load(f)
+
+
+class CILogonSettings(BaseModel):
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+    scope: str
+    server_metadata_url: str = "https://cilogon.org/.well-known/openid-configuration"
+    grant_type: str = "authorization_code"
+
+
+class ClickUpSettings(BaseModel):
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+    authorization_url: str
+    token_url: str
+    api_token: str
+
+
+class Settings(BaseSettings):
+    secret_key: str
+    access_token_expire_minutes: int
+    refresh_token_expire_days: int
+    jwt_algorithm: str
+    ci_logon_settings: CILogonSettings
+    clickup_settings: ClickUpSettings
+    debug: bool = True
+
 
 fake_users_db = {
     "jpuerto": {
@@ -23,22 +56,8 @@ fake_users_db = {
         "disabled": False,
     }
 }
-
-# ClickUp Settings
-client_id = "0D2C3KLO7ETCTIBR72Z6885TJYZ9JN4W"
-client_secret = "Y7FKKTVWY49OP5HZ8IENCGNXP9M5J5JFIZLVPKTJZ9ZJCADN5RGMDESOZMMWM1FX"
-redirect_uri = "http://localhost:5000/management/v1/clickup/callback"
-authorization_base_url = "https://app.clickup.com/api"
-token_url = "https://app.clickup.com/api/v2/oauth/token"
-
-# ClickUp API token
-api_token = "pk_89208365_SJ9TK5B5CCFAU13DD68WDH6GGXGSSY1W"
-# api_token = '82415788_78820e51167b40f8aa2e20575000f6e39a3c511d3333cce1214c56c8edf6f18e'
-
-# The headers, including the authorization token
-headers = {"Authorization": api_token, "Content-Type": "application/json"}
-
-
+# Create an instance of Settings
+settings = Settings(**load_config("config.json"))
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/management/v1/tokens/")
 
@@ -62,19 +81,19 @@ class User(BaseModel):
     clickup_access_token: str | None = None
 
 
-def verify_password(password):
+def verify_password(password) -> bool:
     # This will be replaced by LDAP
     return True
 
 
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return User(**user_dict)
+def get_user(db, user_info: dict) -> Union[User, None]:
+    # TODO: Update to actually use DB
+    # Check based on username first and then use email
+    return db["jpuerto"]
 
 
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
+def authenticate_user(fake_db, user_info: dict, password: str) -> Union[User, bool]:
+    user = get_user(fake_db, user_info)
     if not user:
         return False
     if not verify_password(password):
@@ -82,14 +101,16 @@ def authenticate_user(fake_db, username: str, password: str):
     return user
 
 
-def create_token(data: dict, expires_delta: timedelta | None = None):
+def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.jwt_algorithm
+    )
     return encoded_jwt
 
 
@@ -100,14 +121,16 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.jwt_algorithm]
+        )
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+    user = get_user(fake_users_db, user_info={"username": token_data.username})
     if user is None:
         raise credentials_exception
     return user
@@ -130,8 +153,9 @@ async def home():
 async def clickup_oauth_get_auth_url(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
+    clickup_settings = settings.clickup_settings
     # Redirect the user to ClickUp's authorization URL
-    clickup_oauth_url = f"{authorization_base_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
+    clickup_oauth_url = f"{clickup_settings.authorization_url}?client_id={clickup_settings.client_id}&redirect_uri={clickup_settings.redirect_uri}&response_type=code"
     return {"clickup_oauth_url": clickup_oauth_url}
 
 
@@ -141,13 +165,14 @@ async def clickup_oauth_post_oauth_code(
     oauth_code: str,
 ):
     # Exchange the authorization code for an access token
+    clickup_settings = settings.clickup_config
     token_response = requests.post(
-        token_url,
+        clickup_settings.token_url,
         data={
-            "client_id": client_id,
-            "client_secret": client_secret,
+            "client_id": clickup_settings.client_id,
+            "client_secret": clickup_settings.client_secret,
             "code": oauth_code,
-            "redirect_uri": redirect_uri,
+            "redirect_uri": clickup_settings.redirect_uri,
         },
     )
 
@@ -170,48 +195,116 @@ async def clickup_oauth_callback(request: Request):
         return {"oauth_code": oauth_code}
 
 
+@app.get("/management/v1/tokens/")
+async def get_oidc_login_url() -> str:
+    ci_logon_settings = settings.ci_logon_settings
+    metadata = requests.get(ci_logon_settings.server_metadata_url).json()
+    authorization_endpoint = metadata.get("authorization_endpoint")
+    params = {
+        "client_id": ci_logon_settings.client_id,
+        "response_type": "code",
+        "scope": ci_logon_settings.scope,
+        "redirect_uri": ci_logon_settings.redirect_uri,
+    }
+    redirect = f"{authorization_endpoint}?{urlencode(params, doseq=True)}"
+    return redirect
+
+
 @app.post("/management/v1/tokens/")
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    oauth_code: str,
 ) -> Token:
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    ci_logon_settings = settings.ci_logon_settings
+    metadata = requests.get(ci_logon_settings.server_metadata_url).json()
+
+    # Get an access token using the oauth_code
+    token_endpoint = metadata.get("token_endpoint")
+    token_response = requests.post(
+        token_endpoint,
+        data={
+            "grant_type": ci_logon_settings.grant_type,
+            "client_id": ci_logon_settings.client_id,
+            "client_secret": ci_logon_settings.client_secret,
+            "code": oauth_code,
+            "redirect_uri": ci_logon_settings.redirect_uri,
+        },
+    )
+
+    if token_response.status_code == 200:
+        access_token = token_response.json().get("access_token")
+
+        # Get user information from CILogon using access token
+        userinfo_endpoint = metadata.get("userinfo_endpoint")
+        userinfo_response = requests.post(
+            userinfo_endpoint, data={"access_token": access_token}
+        )
+        if userinfo_response.status_code == 200:
+            userinfo = userinfo_response.json()
+        else:
+            raise HTTPException(
+                status_code=userinfo_response.status_code,
+                detail=userinfo_response.json(),
+            )
+    else:
+        raise HTTPException(
+            status_code=token_response.status_code, detail=token_response.json()
+        )
+
+    user = authenticate_user(fake_users_db, userinfo, "")
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="User not found based on user info",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
     access_token = create_token(
-        data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        data={"sub": user.username},
+        expires_delta=timedelta(minutes=settings.access_token_expires_minutes),
     )
     refresh_token = create_token(
-        data={"sub": user.username}, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        data={"sub": user.username},
+        expires_delta=timedelta(days=settings.refresh_token_expire_days),
     )
-    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+    return Token(
+        access_token=access_token, refresh_token=refresh_token, token_type="bearer"
+    )
 
 
 @app.post("/management/v1/tokens/refresh/", response_model=Token)
 async def refresh_access_token(refresh_token: str):
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            refresh_token, settings.secret_key, algorithms=[settings.jwt_algorithm]
+        )
         username: str = payload.get("sub")
         if username is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
     except PyJWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
 
-    user = get_user(fake_users_db, username)
+    user = get_user(fake_users_db, {"username": username})
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
+        )
 
     # Generate new access token
     access_token = create_token(
-        data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        data={"sub": user.username},
+        expires_delta=timedelta(minutes=settings.access_token_expires_minutes),
     )
     refresh_token = create_token(
-        data={"sub": user.username}, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        data={"sub": user.username},
+        expires_delta=timedelta(days=settings.refresh_token_expire_days),
     )
-    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+    return Token(
+        access_token=access_token, refresh_token=refresh_token, token_type="bearer"
+    )
 
 
 @app.get("/users/me/", response_model=User)
