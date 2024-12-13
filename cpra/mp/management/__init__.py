@@ -1,6 +1,7 @@
-from urllib.parse import urlencode
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Union
+from urllib.parse import urlencode
 
 import jwt
 import requests
@@ -9,8 +10,6 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError, PyJWTError
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
-
-import json
 
 
 def load_config(file_path: str):
