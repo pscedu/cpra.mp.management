@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.4](https://github.com/pscedu/cpra.mp.management/compare/v0.1.3...v0.1.4) (2024-12-13)
+
+
+### Features
+
+* **Auth:** Add support for CILogon ([6c81749](https://github.com/pscedu/cpra.mp.management/commit/6c81749b98e585475aeaa27ae46d776a26fc25bb))
+
+
+### Bug Fixes
+
+* **General:** Formatting ([84a2ef3](https://github.com/pscedu/cpra.mp.management/commit/84a2ef394a5be551826828495f8019619056be25))
+* **General:** Formatting ([1bedd26](https://github.com/pscedu/cpra.mp.management/commit/1bedd261384129fc4b27bd40df407098e5a9662f))
+* **General:** Syntax updates ([059417c](https://github.com/pscedu/cpra.mp.management/commit/059417cac9b4344045c09244215ce2e645f28021))
+* **General:** Update .gitignore ([bb82f5d](https://github.com/pscedu/cpra.mp.management/commit/bb82f5da5fb93935d35869128ca6a93f93faa49a))
+
 ## [0.1.3](https://github.com/pscedu/cpra.mp.management/compare/v0.1.2...v0.1.3) (2024-11-18)
 
 
