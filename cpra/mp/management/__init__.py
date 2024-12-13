@@ -1,5 +1,3 @@
-from http.client import HTTPException
-
 from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Union
