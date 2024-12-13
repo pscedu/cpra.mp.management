@@ -106,9 +106,7 @@ def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode, settings.secret_key, algorithm=settings.jwt_algorithm
-    )
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt
 
 
@@ -119,9 +117,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(
-            token, settings.secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -233,9 +229,7 @@ async def login_for_access_token(
 
         # Get user information from CILogon using access token
         userinfo_endpoint = metadata.get("userinfo_endpoint")
-        userinfo_response = requests.post(
-            userinfo_endpoint, data={"access_token": access_token}
-        )
+        userinfo_response = requests.post(userinfo_endpoint, data={"access_token": access_token})
         if userinfo_response.status_code == 200:
             userinfo = userinfo_response.json()
         else:
@@ -244,9 +238,7 @@ async def login_for_access_token(
                 detail=userinfo_response.json(),
             )
     else:
-        raise HTTPException(
-            status_code=token_response.status_code, detail=token_response.json()
-        )
+        raise HTTPException(status_code=token_response.status_code, detail=token_response.json())
 
     user = authenticate_user(fake_users_db, userinfo, "")
     if not user:
@@ -264,9 +256,7 @@ async def login_for_access_token(
         data={"sub": user.username},
         expires_delta=timedelta(days=settings.refresh_token_expire_days),
     )
-    return Token(
-        access_token=access_token, refresh_token=refresh_token, token_type="bearer"
-    )
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @app.post("/management/v1/tokens/refresh/", response_model=Token)
@@ -277,19 +267,13 @@ async def refresh_access_token(refresh_token: str):
         )
         username: str = payload.get("sub")
         if username is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user = get_user(fake_users_db, {"username": username})
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
 
     # Generate new access token
     access_token = create_token(
@@ -300,9 +284,7 @@ async def refresh_access_token(refresh_token: str):
         data={"sub": user.username},
         expires_delta=timedelta(days=settings.refresh_token_expire_days),
     )
-    return Token(
-        access_token=access_token, refresh_token=refresh_token, token_type="bearer"
-    )
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @app.get("/users/me/", response_model=User)
