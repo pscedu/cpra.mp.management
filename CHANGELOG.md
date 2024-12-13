@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/pscedu/cpra.mp.management/compare/v0.1.4...v0.1.5) (2024-12-13)
+
+
+### Bug Fixes
+
+* **General:** Update requirements.txt ([5b56cc6](https://github.com/pscedu/cpra.mp.management/commit/5b56cc644a88ae5c1f8001cebab1102876e9cc89))
+
 ## [0.1.4](https://github.com/pscedu/cpra.mp.management/compare/v0.1.3...v0.1.4) (2024-12-13)
 
 
