@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/pscedu/cpra.mp.management/compare/v0.2.1...v0.2.2) (2025-01-10)
+
+
+### Bug Fixes
+
+* Add psycopg2-binary to requirements ([f988b36](https://github.com/pscedu/cpra.mp.management/commit/f988b36cf9f342e9442fb4dbc50376feaccb34e8))
+
 ## [0.2.1](https://github.com/pscedu/cpra.mp.management/compare/v0.2.0...v0.2.1) (2025-01-10)
 
 
