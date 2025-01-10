@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/pscedu/cpra.mp.management/compare/v0.2.2...v0.2.3) (2025-01-10)
+
+
+### Bug Fixes
+
+* Remove psycopg2 ([6385e3f](https://github.com/pscedu/cpra.mp.management/commit/6385e3f4df4d1fd8e31fc4577654e292c023d5e7))
+
 ## [0.2.2](https://github.com/pscedu/cpra.mp.management/compare/v0.2.1...v0.2.2) (2025-01-10)
 
 
