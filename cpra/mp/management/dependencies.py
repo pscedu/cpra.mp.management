@@ -1,14 +1,12 @@
-from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
 
-import jwt
 from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
-from cpra.mp.management.settings import settings
-from cpra.mp.management.models.db_models import User
 
-from cpra.mp.management.controllers.user_controllers import get_user
 from cpra.mp.management.controllers.token_controllers import get_token
+from cpra.mp.management.controllers.user_controllers import get_user
+from cpra.mp.management.models.db_models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/management/v1/tokens/")
 

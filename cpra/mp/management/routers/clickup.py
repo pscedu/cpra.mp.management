@@ -1,17 +1,15 @@
 from typing import Annotated
 
 import requests
-from fastapi import Depends, HTTPException, Body, APIRouter
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlmodel import Session
 
 from cpra.mp.management.database import engine
-from cpra.mp.management.settings import settings
-from cpra.mp.management.models.db_models import User
 from cpra.mp.management.dependencies import get_current_active_user
+from cpra.mp.management.models.db_models import User
+from cpra.mp.management.settings import settings
 
-router = APIRouter(
-    prefix="/clickup/oauth"
-)
+router = APIRouter(prefix="/clickup/oauth")
 
 
 @router.get("/")
@@ -52,7 +50,7 @@ async def clickup_oauth_post_oauth_code(
             headers={
                 "accept": "application/json",
                 "Authorization": f"{access_token}",
-            }
+            },
         )
 
         # TODO: Add checks and responses for failure cases

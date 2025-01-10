@@ -1,17 +1,17 @@
-from fastapi import APIRouter, Body, HTTPException, status
-from cpra.mp.management.settings import settings
-import requests
-from urllib.parse import urlencode
-from typing import Annotated
-from cpra.mp.management.models.response_models import Token
-from cpra.mp.management.controllers.user_controllers import get_user
-from cpra.mp.management.controllers.token_controllers import create_token, get_token
 from datetime import timedelta
+from typing import Annotated
+from urllib.parse import urlencode
+
+import requests
+from fastapi import APIRouter, Body, HTTPException, status
 from jwt import PyJWTError
 
-router = APIRouter(
-    prefix="/tokens"
-)
+from cpra.mp.management.controllers.token_controllers import create_token, get_token
+from cpra.mp.management.controllers.user_controllers import get_user
+from cpra.mp.management.models.response_models import Token
+from cpra.mp.management.settings import settings
+
+router = APIRouter(prefix="/tokens")
 
 
 @router.get("/")
