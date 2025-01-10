@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/pscedu/cpra.mp.management/compare/v0.1.5...v0.2.0) (2025-01-10)
+
+
+### Features
+
+* Fix up routes and add functionality for connecting to a DB for storing user information. ([1e25490](https://github.com/pscedu/cpra.mp.management/commit/1e25490d8b7fba67b2a9a79d98af80b9b6f89c4f))
+* Fix up routes and add functionality for connecting to a DB for storing user information. ([e00c06d](https://github.com/pscedu/cpra.mp.management/commit/e00c06d4754067bab17ba7fafc701b23fffcfcbc))
+
 ## [0.1.5](https://github.com/pscedu/cpra.mp.management/compare/v0.1.4...v0.1.5) (2024-12-13)
 
 
