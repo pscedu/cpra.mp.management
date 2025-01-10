@@ -1,60 +1,19 @@
-import json
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Union
 from urllib.parse import urlencode
 
 import jwt
 import requests
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError, PyJWTError
 from pydantic import BaseModel
-from pydantic_settings import BaseSettings
+from sqlmodel import Session, select
 
+from cpra.mp.management.database import engine
+from cpra.mp.management.settings import settings
+from cpra.mp.management.db_models import User
 
-def load_config(file_path: str):
-    with open(file_path, "r") as f:
-        return json.load(f)
-
-
-class CILogonSettings(BaseModel):
-    client_id: str
-    client_secret: str
-    redirect_uri: str
-    scope: str
-    server_metadata_url: str = "https://cilogon.org/.well-known/openid-configuration"
-    grant_type: str = "authorization_code"
-
-
-class ClickUpSettings(BaseModel):
-    client_id: str
-    client_secret: str
-    redirect_uri: str
-    authorization_url: str
-    token_url: str
-    api_token: str
-
-
-class Settings(BaseSettings):
-    secret_key: str
-    access_token_expire_minutes: int
-    refresh_token_expire_days: int
-    jwt_algorithm: str
-    ci_logon_settings: CILogonSettings
-    clickup_settings: ClickUpSettings
-    debug: bool = True
-
-
-fake_users_db = {
-    "jpuerto": {
-        "username": "jpuerto",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "disabled": False,
-    }
-}
-# Create an instance of Settings
-settings = Settings(**load_config("config.json"))
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/management/v1/tokens/")
 
@@ -65,36 +24,14 @@ class Token(BaseModel):
     token_type: str
 
 
-class TokenData(BaseModel):
-    username: str | None = None
+def get_user(user_info: dict) -> Union[User, None]:
+    username = user_info.get("username")
+    email = user_info.get("email")
+    with Session(engine) as session:
+        user = session.exec(select(User).where(User.email == email)).first()
+        if not user:
+            user = session.exec(select(User).where(User.username == username)).first()
 
-
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
-    clickup_id: str | None = None
-    clickup_access_token: str | None = None
-
-
-def verify_password(password) -> bool:
-    # This will be replaced by LDAP
-    return True
-
-
-def get_user(db, user_info: dict) -> Union[User, None]:
-    # TODO: Update to actually use DB
-    # Check based on username first and then use email
-    return db["jpuerto"]
-
-
-def authenticate_user(fake_db, user_info: dict, password: str) -> Union[User, bool]:
-    user = get_user(fake_db, user_info)
-    if not user:
-        return False
-    if not verify_password(password):
-        return False
     return user
 
 
@@ -120,11 +57,10 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_user(fake_users_db, user_info={"username": token_data.username})
-    if user is None:
+    user = get_user(user_info={"username": username})
+    if not user:
         raise credentials_exception
     return user
 
@@ -155,10 +91,10 @@ async def clickup_oauth_get_auth_url(
 @app.post("/management/v1/clickup/oauth/")
 async def clickup_oauth_post_oauth_code(
     current_user: Annotated[User, Depends(get_current_active_user)],
-    oauth_code: str,
+    oauth_code: Annotated[str, Body(embed=True)],
 ):
     # Exchange the authorization code for an access token
-    clickup_settings = settings.clickup_config
+    clickup_settings = settings.clickup_settings
     token_response = requests.post(
         clickup_settings.token_url,
         data={
@@ -171,21 +107,34 @@ async def clickup_oauth_post_oauth_code(
 
     if token_response.status_code == 200:
         access_token = token_response.json().get("access_token")
+
         # We update the user with the click_up access token
+        current_user.clickup_access_token = access_token
+        # We also need to introspect the clickup user id
+        introspect_response = requests.get(
+            f"{clickup_settings.base_api_url}/user",
+            headers={
+                "accept": "application/json",
+                "Authorization": f"{access_token}",
+            }
+        )
+
+        # TODO: Add checks and responses for failure cases
+        #   - Access token GET fails
+        #   - Introspection fails
+
+        if introspect_response.status_code == 200:
+            introspect_data = introspect_response.json()
+            current_user.clickup_id = introspect_data.get("user", {}).get("id")
+            with Session(engine) as session:
+                session.add(current_user)
+                session.commit()
+
+        # TODO: Change what we return here. Front-end doesn't need this information.
         return {"access_token": access_token}
     else:
         error_detail = token_response.json()
         raise HTTPException(status_code=token_response.status_code, detail=error_detail)
-
-
-@app.get("/management/v1/clickup/callback/")
-async def clickup_oauth_callback(request: Request):
-    # Get the authorization code from the callback query parameters
-    oauth_code = request.query_params.get("code")
-    if not oauth_code:
-        raise HTTPException(status_code=400, detail="Authorization code not found.")
-    else:
-        return {"oauth_code": oauth_code}
 
 
 @app.get("/management/v1/tokens/")
@@ -205,8 +154,10 @@ async def get_oidc_login_url() -> str:
 
 @app.post("/management/v1/tokens/")
 async def login_for_access_token(
-    oauth_code: str,
+    oauth_code: Annotated[str, Body(embed=True)],
 ) -> Token:
+    print("hello world?")
+    print(oauth_code)
     ci_logon_settings = settings.ci_logon_settings
     metadata = requests.get(ci_logon_settings.server_metadata_url).json()
 
@@ -239,7 +190,7 @@ async def login_for_access_token(
     else:
         raise HTTPException(status_code=token_response.status_code, detail=token_response.json())
 
-    user = authenticate_user(fake_users_db, userinfo, "")
+    user = get_user(userinfo)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -247,19 +198,20 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    data = {"sub": user.username}
     access_token = create_token(
-        data={"sub": user.username},
-        expires_delta=timedelta(minutes=settings.access_token_expires_minutes),
+        data=data,
+        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
     refresh_token = create_token(
-        data={"sub": user.username},
+        data=data,
         expires_delta=timedelta(days=settings.refresh_token_expire_days),
     )
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @app.post("/management/v1/tokens/refresh/", response_model=Token)
-async def refresh_access_token(refresh_token: str):
+async def refresh_access_token(refresh_token: Annotated[str, Body(embed=True)]):
     try:
         payload = jwt.decode(
             refresh_token, settings.secret_key, algorithms=[settings.jwt_algorithm]
@@ -270,17 +222,18 @@ async def refresh_access_token(refresh_token: str):
     except PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-    user = get_user(fake_users_db, {"username": username})
-    if user is None:
+    user = get_user({"username": username})
+    if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
 
+    data = {"sub": user.username}
     # Generate new access token
     access_token = create_token(
-        data={"sub": user.username},
-        expires_delta=timedelta(minutes=settings.access_token_expires_minutes),
+        data=data,
+        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
     refresh_token = create_token(
-        data={"sub": user.username},
+        data=data,
         expires_delta=timedelta(days=settings.refresh_token_expire_days),
     )
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
