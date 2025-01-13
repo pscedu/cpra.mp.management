@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/pscedu/cpra.mp.management/compare/v0.2.3...v0.3.0) (2025-01-13)
+
+
+### Bug Fixes
+
+* expose 5000 not 8001 ([ab61661](https://github.com/pscedu/cpra.mp.management/commit/ab616614e0059eb9cc3397517c3b0f130f09ddc0))
+
 ## [0.2.3](https://github.com/pscedu/cpra.mp.management/compare/v0.2.2...v0.2.3) (2025-01-10)
 
 
