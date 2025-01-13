@@ -10,5 +10,5 @@ RUN mkdir -p cpra/mp/data && pip install -r requirements.txt \
 
 COPY cpra/ ./cpra
 
-EXPOSE 8001
+EXPOSE 5000
 CMD ["python3", "-u", "-m", "cpra.mp.management"]
