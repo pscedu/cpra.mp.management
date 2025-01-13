@@ -5,9 +5,11 @@ from urllib.parse import urlencode
 import requests
 from fastapi import APIRouter, Body, HTTPException, status
 from jwt import PyJWTError
+from sqlmodel import Session
 
 from cpra.mp.management.controllers.token_controllers import create_token, get_token
 from cpra.mp.management.controllers.user_controllers import get_user
+from cpra.mp.management.database import engine
 from cpra.mp.management.models.response_models import Token
 from cpra.mp.management.settings import settings
 
@@ -65,13 +67,33 @@ async def login_for_access_token(
     else:
         raise HTTPException(status_code=token_response.status_code, detail=token_response.json())
 
+    # Find user based on email
     user = get_user(userinfo)
     if not user:
+        # If user is not found with email return error
+        # TODO: Change to add user once white-list expectation is changed
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found based on user info",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    if userinfo.get("idp_name") != "ACCESS":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unexpected Identity Provider used. Please use ACCESS Identity Provider.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Make sure user has username/name set.
+    if not user.username or not user.full_name:
+        # If there's no username/name, then lets set the username and full name
+        user.username = userinfo.get("email")
+        user.full_name = userinfo.get("name")
+        with Session(engine) as session:
+            session.add(user)
+            session.commit()
+            session.refresh(user)
 
     data = {"sub": user.username}
     access_token = create_token(
