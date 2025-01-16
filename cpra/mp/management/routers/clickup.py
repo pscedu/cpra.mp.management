@@ -1,32 +1,46 @@
+from datetime import timedelta
 from typing import Annotated
 
 import requests
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
 from cpra.mp.management.database import engine
-from cpra.mp.management.dependencies import get_current_active_user
+from cpra.mp.management.dependencies import get_current_active_user, get_current_user
 from cpra.mp.management.models.db_models import User
 from cpra.mp.management.settings import settings
+from cpra.mp.management.controllers.token_controllers import create_token
 
-router = APIRouter(prefix="/clickup/oauth")
+COOKIE_NAME = "clickup_oauth_temp_token"
+
+router = APIRouter(prefix="/clickup")
 
 
-@router.get("/")
-async def clickup_oauth_get_auth_url(
+@router.get("/", response_class=RedirectResponse)
+async def clickup_login(
     current_user: Annotated[User, Depends(get_current_active_user)],
+    request: Request,
+    response: Response
 ):
+    # Set a cookie containing a dedicated access token that will be
+    # read on callback.
+    data = {"sub": current_user.username}
+    cookie_token = create_token(data=data, expires_delta=timedelta(minutes=15))
+    response.set_cookie(key=COOKIE_NAME, value=cookie_token)
+
     clickup_settings = settings.clickup_settings
     # Redirect the user to ClickUp's authorization URL
-    clickup_oauth_url = f"{clickup_settings.authorization_url}?client_id={clickup_settings.client_id}&redirect_uri={clickup_settings.redirect_uri}&response_type=code"
-    return {"clickup_oauth_url": clickup_oauth_url}
+    return f"{clickup_settings.authorization_url}?client_id={clickup_settings.client_id}&redirect_uri={request.url_for("clickup_callback")}&response_type=code"
 
 
-@router.post("/")
-async def clickup_oauth_post_oauth_code(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-    oauth_code: Annotated[str, Body(embed=True)],
-):
+@router.get("/callback", response_class=RedirectResponse)
+async def clickup_callback(code: str, request: Request):
+    # Determine the current user from the cookie token.
+    current_user = get_current_active_user(
+        get_current_user(request.cookies.get(COOKIE_NAME))
+    )
+
     # Exchange the authorization code for an access token
     clickup_settings = settings.clickup_settings
     token_response = requests.post(
@@ -34,7 +48,7 @@ async def clickup_oauth_post_oauth_code(
         data={
             "client_id": clickup_settings.client_id,
             "client_secret": clickup_settings.client_secret,
-            "code": oauth_code,
+            "code": code,
             "redirect_uri": clickup_settings.redirect_uri,
         },
     )
@@ -64,8 +78,7 @@ async def clickup_oauth_post_oauth_code(
                 session.add(current_user)
                 session.commit()
 
-        # TODO: Change what we return here. Front-end doesn't need this information.
-        return {"access_token": access_token}
+        return f"{clickup_settings.portal_redirect_uri}?status=success"
     else:
         error_detail = token_response.json()
         raise HTTPException(status_code=token_response.status_code, detail=error_detail)
