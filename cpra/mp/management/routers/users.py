@@ -47,6 +47,9 @@ async def update_current_user(
 ):
     with Session(engine) as session:
         user_data = request_user.model_dump(exclude_unset=True)
+        if "role" in user_data:
+            del user_data["role"]
+
         current_user.sqlmodel_update(user_data)
         session.add(current_user)
         session.commit()
@@ -63,9 +66,9 @@ async def update_user(
 ):
     with Session(engine) as session:
         user = session.get(DB_User, user_id)
-        user_data = request_user.model_dump(exclude_unset=True)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
+        user_data = request_user.model_dump(exclude_unset=True)
         user.sqlmodel_update(user_data)
         session.add(user)
         session.commit()
