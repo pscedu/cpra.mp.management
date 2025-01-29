@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from cpra.mp.management.database import engine
-from cpra.mp.management.dependencies import get_current_active_user
+from cpra.mp.management.dependencies import get_current_active_user, get_current_active_admin
 from cpra.mp.management.models.db_models import User as DB_User
 from cpra.mp.management.models.response_models import User as ResponseUser
 from cpra.mp.management.models.request_models import User as RequestUser
@@ -59,7 +59,7 @@ async def update_current_user(
 async def update_user(
         user_id: int,
         request_user: RequestUser,
-        current_user: Annotated[DB_User, Depends(get_current_active_user)],
+        current_user: Annotated[DB_User, Depends(get_current_active_admin)],
 ):
     with Session(engine) as session:
         user = session.get(DB_User, user_id)
