@@ -9,3 +9,4 @@ class User(SQLModel, table=True):
     disabled: bool | None = False
     clickup_id: str | None = None
     clickup_access_token: str | None = None
+    role: str | None = "user"
