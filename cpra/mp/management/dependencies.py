@@ -20,7 +20,8 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     try:
         payload = get_token(token)
         username: str = payload.get("sub")
-        if username is None:
+        token_type: str = payload.get("type")
+        if username is None or token_type != "access":
             raise credentials_exception
     except InvalidTokenError:
         raise credentials_exception

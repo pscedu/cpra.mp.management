@@ -32,7 +32,7 @@ async def oidc_login(request: Request):
 
 
 @router.get("/callback", response_class=RedirectResponse)
-async def oidc_callback(code: str):
+async def oidc_callback(code: str, request: Request):
     ci_logon_settings = settings.ci_logon_settings
     metadata = requests.get(ci_logon_settings.server_metadata_url).json()
 
@@ -45,7 +45,7 @@ async def oidc_callback(code: str):
             "client_id": ci_logon_settings.client_id,
             "client_secret": ci_logon_settings.client_secret,
             "code": code,
-            "redirect_uri": ci_logon_settings.redirect_uri,
+            "redirect_uri": request.url_for("oidc_callback"),
         },
     )
 
@@ -93,14 +93,15 @@ async def oidc_callback(code: str):
             session.commit()
             session.refresh(user)
 
-    data = {"sub": user.username}
     params = {
         "access_token": create_token(
-            data=data,
+            user,
+            "access",
             expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
         ),
         "refresh_token": create_token(
-            data=data,
+            user,
+            "refresh",
             expires_delta=timedelta(days=settings.refresh_token_expire_days),
         ),
         "token_type": "bearer"
@@ -113,23 +114,21 @@ async def refresh_access_token(refresh_token: Annotated[str, Body(embed=True)]):
     try:
         payload = get_token(refresh_token)
         username: str = payload.get("sub")
-        if username is None:
+        token_type: str = payload.get("type")
+        if username is None or token_type != "refresh":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user = get_user({"username": username})
-    if not user:
+    if not user or user.disabled:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
-
-    data = {"sub": user.username}
+    
     # Generate new access token
     access_token = create_token(
-        data=data,
+        user,
+        "access",
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
-    refresh_token = create_token(
-        data=data,
-        expires_delta=timedelta(days=settings.refresh_token_expire_days),
-    )
-    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+
+    return Token(access_token=access_token, refresh_token=None, token_type="bearer")
