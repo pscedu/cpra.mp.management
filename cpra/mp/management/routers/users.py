@@ -4,10 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from cpra.mp.management.database import engine
-from cpra.mp.management.dependencies import get_current_active_user, get_current_active_admin
+from cpra.mp.management.dependencies import (
+    get_current_active_admin,
+    get_current_active_user,
+)
 from cpra.mp.management.models.db_models import User as DB_User
-from cpra.mp.management.models.response_models import User as ResponseUser
 from cpra.mp.management.models.request_models import User as RequestUser
+from cpra.mp.management.models.response_models import User as ResponseUser
 
 router = APIRouter(prefix="/users")
 
@@ -23,15 +26,15 @@ async def get_user_list(
 
 @router.get("/current_user", response_model=ResponseUser)
 async def get_current_user(
-        current_user: Annotated[DB_User, Depends(get_current_active_user)],
+    current_user: Annotated[DB_User, Depends(get_current_active_user)],
 ):
     return current_user
 
 
 @router.get("/{user_id}", response_model=ResponseUser)
 async def get_user(
-        user_id: int,
-        current_user: Annotated[DB_User, Depends(get_current_active_user)],
+    user_id: int,
+    current_user: Annotated[DB_User, Depends(get_current_active_user)],
 ):
     with Session(engine) as session:
         user = session.get(DB_User, user_id)
@@ -42,8 +45,8 @@ async def get_user(
 
 @router.put("/current_user", response_model=ResponseUser)
 async def update_current_user(
-        request_user: RequestUser,
-        current_user: Annotated[DB_User, Depends(get_current_active_user)],
+    request_user: RequestUser,
+    current_user: Annotated[DB_User, Depends(get_current_active_user)],
 ):
     with Session(engine) as session:
         user_data = request_user.model_dump(exclude_unset=True)
@@ -60,9 +63,9 @@ async def update_current_user(
 @router.put("/{user_id}", response_model=ResponseUser)
 # TODO: Add permission checking. IE, only allowed if the current user is an admin.
 async def update_user(
-        user_id: int,
-        request_user: RequestUser,
-        current_user: Annotated[DB_User, Depends(get_current_active_admin)],
+    user_id: int,
+    request_user: RequestUser,
+    current_user: Annotated[DB_User, Depends(get_current_active_admin)],
 ):
     with Session(engine) as session:
         user = session.get(DB_User, user_id)
