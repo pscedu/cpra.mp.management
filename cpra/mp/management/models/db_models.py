@@ -6,6 +6,7 @@ class User(SQLModel, table=True):
     username: str
     email: str | None = None
     full_name: str | None = None
-    disabled: bool | None = None
+    disabled: bool | None = False
     clickup_id: str | None = None
     clickup_access_token: str | None = None
+    role: str | None = "user"

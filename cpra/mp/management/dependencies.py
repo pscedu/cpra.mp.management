@@ -7,6 +7,7 @@ from jwt.exceptions import InvalidTokenError
 from cpra.mp.management.controllers.token_controllers import get_token
 from cpra.mp.management.controllers.user_controllers import get_user
 from cpra.mp.management.models.db_models import User
+from cpra.mp.management.models.request_models import RoleTypes
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/management/v1/tokens/", auto_error=False)
 query_scheme = APIKeyQuery(name="access_token", auto_error=False)
@@ -43,4 +44,12 @@ async def get_current_active_user(
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
+async def get_current_active_admin(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    if current_user.role != RoleTypes.admin:
+        raise HTTPException(status_code=400, detail="Only admin users can use this endpoint")
     return current_user

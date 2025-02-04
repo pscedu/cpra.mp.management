@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/pscedu/cpra.mp.management/compare/v0.3.0...v0.4.0) (2025-01-30)
+
+
+### Bug Fixes
+
+* don't allow users to update their own role. ([ebc2684](https://github.com/pscedu/cpra.mp.management/commit/ebc26842c0f2d28c4fb878317c15e2c12e8248cd))
+* email cannot be updated ([dad8010](https://github.com/pscedu/cpra.mp.management/commit/dad801061c29f3f4a0179fcdcb7ebc26b571ddd4))
+
 ## [0.3.0](https://github.com/pscedu/cpra.mp.management/compare/v0.2.3...v0.3.0) (2025-01-13)
 
 
