@@ -16,7 +16,7 @@ def create_token(user: User, token_type: str, expires_delta: timedelta | None
         to_encode.update(
             {
                 "name": user.full_name,
-                "clickup": user.clickup_access_token is not None,
+                "clickup": user.clickup_id,
                 "email": user.email
             }
         )

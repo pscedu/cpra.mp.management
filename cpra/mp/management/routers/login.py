@@ -85,7 +85,7 @@ async def oidc_callback(code: str, request: Request):
 
     # Make sure user has username/name set.
     if not user.username or not user.full_name:
-        # If there's no username/name, then lets set the username and full name
+        # If there's no username/name, then let's set the username and full name
         user.username = userinfo.get("email")
         user.full_name = userinfo.get("name")
         with Session(engine) as session:
