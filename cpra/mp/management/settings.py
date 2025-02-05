@@ -14,7 +14,7 @@ def load_config(file_path: str):
 class CILogonSettings(BaseModel):
     client_id: str
     client_secret: str
-    redirect_uri: str
+    portal_redirect_uri: str
     scope: str
     server_metadata_url: str = "https://cilogon.org/.well-known/openid-configuration"
     grant_type: str = "authorization_code"
@@ -23,7 +23,7 @@ class CILogonSettings(BaseModel):
 class ClickUpSettings(BaseModel):
     client_id: str
     client_secret: str
-    redirect_uri: str
+    portal_redirect_uri: str
     authorization_url: str
     token_url: str
     api_token: str

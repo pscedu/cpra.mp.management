@@ -1,31 +1,41 @@
-from typing import Annotated
+from urllib.parse import urlencode
 
 import requests
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
 from cpra.mp.management.database import engine
-from cpra.mp.management.dependencies import get_current_active_user
+from cpra.mp.management.dependencies import get_current_active_user, query_scheme
 from cpra.mp.management.models.db_models import User
 from cpra.mp.management.settings import settings
 
-router = APIRouter(prefix="/clickup/oauth")
+router = APIRouter(prefix="/clickup")
 
 
-@router.get("/")
-async def clickup_oauth_get_auth_url(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+@router.get("/", response_class=RedirectResponse)
+async def clickup_login(
+    request: Request,
+    # Include current user dependency to verify token.
+    _current_user: User = Depends(get_current_active_user),
+    query_token: str = Depends(query_scheme),
 ):
     clickup_settings = settings.clickup_settings
+    passthrough_params = {"access_token": query_token}
     # Redirect the user to ClickUp's authorization URL
-    clickup_oauth_url = f"{clickup_settings.authorization_url}?client_id={clickup_settings.client_id}&redirect_uri={clickup_settings.redirect_uri}&response_type=code"
-    return {"clickup_oauth_url": clickup_oauth_url}
+    params = {
+        "client_id": clickup_settings.client_id,
+        "redirect_uri": f"{request.url_for('clickup_callback')}?{urlencode(passthrough_params)}",
+        "response_type": "code",
+    }
+    return f"{clickup_settings.authorization_url}?{urlencode(params)}"
 
 
-@router.post("/")
-async def clickup_oauth_post_oauth_code(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-    oauth_code: Annotated[str, Body(embed=True)],
+@router.get("/callback", response_class=RedirectResponse)
+async def clickup_callback(
+    request: Request,
+    code: str,
+    current_user: User = Depends(get_current_active_user),
 ):
     # Exchange the authorization code for an access token
     clickup_settings = settings.clickup_settings
@@ -34,8 +44,8 @@ async def clickup_oauth_post_oauth_code(
         data={
             "client_id": clickup_settings.client_id,
             "client_secret": clickup_settings.client_secret,
-            "code": oauth_code,
-            "redirect_uri": clickup_settings.redirect_uri,
+            "code": code,
+            "redirect_uri": request.url_for("clickup_callback"),
         },
     )
 
@@ -49,7 +59,7 @@ async def clickup_oauth_post_oauth_code(
             f"{clickup_settings.base_api_url}/user",
             headers={
                 "accept": "application/json",
-                "Authorization": f"{access_token}",
+                "Authorization": f"Bearer {access_token}",
             },
         )
 
@@ -64,8 +74,8 @@ async def clickup_oauth_post_oauth_code(
                 session.add(current_user)
                 session.commit()
 
-        # TODO: Change what we return here. Front-end doesn't need this information.
-        return {"access_token": access_token}
+                params = {"clickup_id": current_user.clickup_id, "status": "success"}
+                return f"{clickup_settings.portal_redirect_uri}?{urlencode(params)}"
     else:
         error_detail = token_response.json()
         raise HTTPException(status_code=token_response.status_code, detail=error_detail)
