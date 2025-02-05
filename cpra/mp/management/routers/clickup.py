@@ -74,10 +74,7 @@ async def clickup_callback(
                 session.add(current_user)
                 session.commit()
 
-                params = {
-                    "clickup_id": current_user.clickup_id,
-                    "status": "success"
-                }
+                params = {"clickup_id": current_user.clickup_id, "status": "success"}
                 return f"{clickup_settings.portal_redirect_uri}?{urlencode(params)}"
     else:
         error_detail = token_response.json()

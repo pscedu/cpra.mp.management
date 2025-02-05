@@ -2,27 +2,17 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 
-from cpra.mp.management.settings import settings
 from cpra.mp.management.models.db_models import User
+from cpra.mp.management.settings import settings
 
 
-def create_token(
-    user: User,
-    token_type: str,
-    expires_delta: timedelta | None = None
-) -> str:
+def create_token(user: User, token_type: str, expires_delta: timedelta | None = None) -> str:
     to_encode = {"sub": user.username, "type": token_type}
 
     # TODO: This data probably should come from a separate endpoint
     # (e.g., /user/me).
     if token_type == "access":
-        to_encode.update(
-            {
-                "name": user.full_name,
-                "clickup": user.clickup_id,
-                "email": user.email
-            }
-        )
+        to_encode.update({"name": user.full_name, "clickup": user.clickup_id, "email": user.email})
 
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta

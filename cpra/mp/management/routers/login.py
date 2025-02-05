@@ -104,7 +104,7 @@ async def oidc_callback(code: str, request: Request):
             "refresh",
             expires_delta=timedelta(days=settings.refresh_token_expire_days),
         ),
-        "token_type": "bearer"
+        "token_type": "bearer",
     }
     return f"{ci_logon_settings.portal_redirect_uri}?{urlencode(params, doseq=True)}"
 
