@@ -25,7 +25,7 @@ async def clickup_login(
     # Redirect the user to ClickUp's authorization URL
     params = {
         "client_id": clickup_settings.client_id,
-        "redirect_uri": f"{request.url_for("clickup_callback")}?{urlencode(passthrough_params)}",
+        "redirect_uri": f"{request.url_for('clickup_callback')}?{urlencode(passthrough_params)}",
         "response_type": "code",
     }
     return f"{clickup_settings.authorization_url}?{urlencode(params)}"
