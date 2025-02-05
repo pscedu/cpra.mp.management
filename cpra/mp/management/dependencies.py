@@ -18,9 +18,10 @@ credentials_exception = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
+
 async def get_current_user(
-        bearer_token: str = Depends(oauth2_scheme),
-        query_token: str = Depends(query_scheme),
+    bearer_token: str = Depends(oauth2_scheme),
+    query_token: str = Depends(query_scheme),
 ):
     token = bearer_token or query_token
     if token is None:

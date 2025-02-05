@@ -19,7 +19,7 @@ async def clickup_login(
     # Include current user dependency to verify token.
     _current_user: User = Depends(get_current_active_user),
     query_token: str = Depends(query_scheme),
-):  
+):
     clickup_settings = settings.clickup_settings
     passthrough_params = {"access_token": query_token}
     # Redirect the user to ClickUp's authorization URL

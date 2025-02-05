@@ -123,7 +123,7 @@ async def refresh_access_token(refresh_token: Annotated[str, Body(embed=True)]):
     user = get_user({"username": username})
     if not user or user.disabled:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
-    
+
     # Generate new access token
     access_token = create_token(
         user,

@@ -6,8 +6,11 @@ from cpra.mp.management.settings import settings
 from cpra.mp.management.models.db_models import User
 
 
-def create_token(user: User, token_type: str, expires_delta: timedelta | None 
-= None) -> str:
+def create_token(
+    user: User,
+    token_type: str,
+    expires_delta: timedelta | None = None
+) -> str:
     to_encode = {"sub": user.username, "type": token_type}
 
     # TODO: This data probably should come from a separate endpoint
