@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/pscedu/cpra.mp.management/compare/v0.4.0...v0.5.0) (2025-02-05)
+
+
+### Features
+
+* **clickup:** use query parameter passthrough instead of cookie ([6707193](https://github.com/pscedu/cpra.mp.management/commit/67071938a1392dc6727b3571c5ce63b935befc22))
+
 ## [0.4.0](https://github.com/pscedu/cpra.mp.management/compare/v0.3.0...v0.4.0) (2025-01-30)
 
 
