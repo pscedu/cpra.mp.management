@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/pscedu/cpra.mp.management/compare/v0.5.0...v0.5.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* update root path to match callback URLs ([37559f2](https://github.com/pscedu/cpra.mp.management/commit/37559f2b8a503dbe32bcfad9da8b2941e708c206))
+
 ## [0.5.0](https://github.com/pscedu/cpra.mp.management/compare/v0.4.0...v0.5.0) (2025-02-05)
 
 
