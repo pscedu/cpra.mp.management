@@ -9,7 +9,7 @@ from cpra.mp.management.controllers.user_controllers import get_user
 from cpra.mp.management.models.db_models import User
 from cpra.mp.management.models.request_models import RoleTypes
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/management/v1/tokens/", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/management/login/", auto_error=False)
 query_scheme = APIKeyQuery(name="access_token", auto_error=False)
 
 credentials_exception = HTTPException(
