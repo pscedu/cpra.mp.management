@@ -61,7 +61,6 @@ async def update_current_user(
 
 
 @router.put("/{user_id}", response_model=ResponseUser)
-# TODO: Add permission checking. IE, only allowed if the current user is an admin.
 async def update_user(
     user_id: int,
     request_user: RequestUser,
