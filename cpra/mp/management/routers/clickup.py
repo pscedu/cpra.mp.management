@@ -8,7 +8,7 @@ from sqlmodel import Session
 
 from cpra.mp.management.database import engine
 from cpra.mp.management.dependencies import get_current_active_user, query_scheme
-from cpra.mp.management.models.db_models import User
+from cpra.mp.management.models.db_models import User as DBUser
 from cpra.mp.management.settings import settings
 from cpra.mp.management.models.response_models import User as ResponseUser
 
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/clickup")
 async def clickup_login(
     request: Request,
     # Include current user dependency to verify token.
-    current_user: User = Depends(get_current_active_user),
+    current_user: DBUser = Depends(get_current_active_user),
     query_token: str = Depends(query_scheme),
 ):
     clickup_settings = settings.clickup_settings
@@ -37,7 +37,7 @@ async def clickup_login(
 async def clickup_callback(
     request: Request,
     code: str,
-    current_user: User = Depends(get_current_active_user),
+    current_user: DBUser = Depends(get_current_active_user),
 ):
     # Exchange the authorization code for an access token
     clickup_settings = settings.clickup_settings
@@ -86,7 +86,7 @@ async def clickup_callback(
 @router.put("/disconnect", response_model=ResponseUser)
 async def clickup_disconnect(
     request: Request,
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     current_user.clickup_access_token = None
     current_user.clickup_id = None
