@@ -13,3 +13,10 @@ class User(BaseModel):
     email: str | None = None
     full_name: str | None = None
     disabled: bool
+
+class SimulationRun(BaseModel):
+    id: int
+    model_group: str
+    scenario: str
+    status: str
+    simulation_run_type: str
