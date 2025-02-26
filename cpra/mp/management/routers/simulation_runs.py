@@ -11,10 +11,7 @@ from cpra.mp.management.dependencies import (
 from cpra.mp.management.models.db_models import User as DBUser, SimulationRun as DBSimulationRun
 from cpra.mp.management.models.request_models import SimulationRun as RequestSimulationRun
 from cpra.mp.management.models.response_models import SimulationRun as ResponseSimulationRun
-from cpra.mp.management.settings import settings
-
-import requests as http_r
-import json
+from cpra.mp.management.controllers.clickup_controller import ClickUpController
 
 router = APIRouter(prefix="/simulation_runs")
 
@@ -23,9 +20,24 @@ router = APIRouter(prefix="/simulation_runs")
 async def get_simulation_runs(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
+    simulation_runs_to_return = []
+    # TODO: Optimization to use the bulk GET endpoint and search based on tags.
+    # This will not support having very many Simulation Runs.
     with Session(engine) as session:
         simulation_runs = session.exec(select(DBSimulationRun)).all()
-        return simulation_runs
+        for simulation_run in simulation_runs:
+            # Get simulation runs from ClickUp
+            try:
+                task = ClickUpController().simulation_run_get(simulation_run)
+            except Exception as e:
+                print(simulation_run.id)
+                print(repr(e))
+                raise HTTPException(status_code=500, detail="ClickUp SimulationRun could not be found.")
+            print(task)
+            simulation_run_data = simulation_run.model_dump()
+            simulation_run_data["clickup_data"] = task
+            simulation_runs_to_return.append(simulation_run_data)
+        return simulation_runs_to_return
 
 
 @router.get("/{simulation_run_id}", response_model=ResponseSimulationRun)
@@ -37,7 +49,15 @@ async def get_simulation_run(
         simulation_run = session.get(DBSimulationRun, simulation_run_id)
         if not simulation_run:
             raise HTTPException(status_code=404, detail="Simulation Run not found")
-        return simulation_run
+        # Get simulation run from ClickUp
+        try:
+            task = ClickUpController().simulation_run_get(simulation_run)
+        except:
+            raise HTTPException(status_code=500, detail="ClickUp Simulation Run could not be found.")
+
+        simulation_run_data = simulation_run.model_dump()
+        simulation_run_data["clickup_data"] = task
+        return simulation_run_data
 
 
 @router.post("/", response_model=ResponseSimulationRun)
@@ -46,36 +66,10 @@ async def create_simulation_run(
     current_user: Annotated[DBUser, Depends(get_current_active_admin)],
 ):
     with Session(engine) as session:
-        # ClickUp creation
-        headers = {
-            'Authorization': settings.clickup_settings.api_token,
-            'Content-Type': 'application/json'
-        }
-        list_id = settings.clickup_settings.list_id
-        template_id = settings.clickup_settings.simulation_run_type_template_id_mapping[simulation_run.simulation_run_type]
-        task_name = f"{simulation_run.model_group} {simulation_run.scenario}"
-        task_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}/taskTemplate/{template_id}"
-
-        # The data for the task you want to create
-        task_data = {
-            'name': task_name,
-            'tags': [simulation_run.simulation_run_type]
-        }
-
-        # Make the POST request to create the task
-        response = http_r.post(task_url, headers=headers, data=json.dumps(task_data))
-
-        # Check the response status code
-        if response.status_code == 200:
-            response = response.json()
-            task = response.get('task', {})
-        else:
-            print('Failed to create task')
-            print('Response:', response.json())
-
-        print(task)
-
-        # TODO: ValueError: "SimulationRun" object has no field "clickup_id"
+        try:
+            task = ClickUpController().simulation_run_create(simulation_run)
+        except:
+            raise HTTPException(status_code=500, detail="Could not create ClickUp Simulation Run")
         simulation_run_data = simulation_run.model_dump()
         simulation_run_data["clickup_id"] = task.get('id')
 
@@ -93,7 +87,7 @@ async def update_simulation_run(
     current_user: Annotated[DBUser, Depends(get_current_active_admin)],
 ):
     with Session(engine) as session:
-        simulation_run = session.get(DBUser, simulation_run_id)
+        simulation_run = session.get(DBSimulationRun, simulation_run_id)
         if not simulation_run:
             raise HTTPException(status_code=404, detail="Simulation Run not found")
         simulation_run_data = request_simulation_run.model_dump(exclude_unset=True)
@@ -101,4 +95,26 @@ async def update_simulation_run(
         session.add(simulation_run)
         session.commit()
         session.refresh(simulation_run)
+        # TODO: Update ClickUp
         return simulation_run
+
+
+@router.delete("/{simulation_run_id}")
+async def delete_simulation_run(
+    simulation_run_id: int,
+    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
+):
+    with Session(engine) as session:
+        simulation_run = session.get(DBSimulationRun, simulation_run_id)
+        if not simulation_run:
+            raise HTTPException(status_code=404, detail="Simulation Run not found")
+        try:
+            ClickUpController().simulation_run_delete(simulation_run)
+        except Exception as e:
+            print(repr(e))
+            raise HTTPException(status_code=500, detail="Failed to delete ClickUp Simulation Run")
+
+        session.delete(simulation_run)
+        session.commit()
+
+        return {"success": True}

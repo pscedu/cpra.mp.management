@@ -20,3 +20,4 @@ class SimulationRun(BaseModel):
     scenario: str
     status: str
     simulation_run_type: str
+    clickup_data: dict
