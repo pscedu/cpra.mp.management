@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/pscedu/cpra.mp.management/compare/v0.5.1...v0.6.0) (2025-02-26)
+
+
+### Features
+
+* Support for Simulation Runs ([c3550db](https://github.com/pscedu/cpra.mp.management/commit/c3550dbc32f6a9207849e799ce0110dc081253d0))
+
 ## [0.5.1](https://github.com/pscedu/cpra.mp.management/compare/v0.5.0...v0.5.1) (2025-02-19)
 
 
