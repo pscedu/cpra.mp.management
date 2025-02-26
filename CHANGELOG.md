@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2](https://github.com/pscedu/cpra.mp.management/compare/v0.6.1...v0.6.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* Make sure to include clickup_data in the response ([5c04847](https://github.com/pscedu/cpra.mp.management/commit/5c0484785902c2758c15d76d207ab3024622b49a))
+* Only allow status to be updated ([ec769d1](https://github.com/pscedu/cpra.mp.management/commit/ec769d1c57bb4c6bd532d33e6880429c8ee2ad6c))
+
 ## [0.6.1](https://github.com/pscedu/cpra.mp.management/compare/v0.6.0...v0.6.1) (2025-02-26)
 
 
