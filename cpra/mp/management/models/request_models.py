@@ -35,7 +35,4 @@ class SimulationRun(BaseModel):
 
 
 class SimulationRunUpdate(BaseModel):
-    model_group: str | None = None
-    scenario: str | None = None
     status: StatusTypes | None = None
-    simulation_run_type: SimulationRunTypes | None = None
