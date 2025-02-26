@@ -9,8 +9,9 @@ class RoleTypes(str, Enum):
 
 
 class StatusTypes(str, Enum):
-    to_do = "to_do"
-    complete = "complete"
+    backlog = "backlog"
+    in_progress = "in progress"
+    done = "done"
 
 
 class SimulationRunTypes(str, Enum):
@@ -29,5 +30,12 @@ class User(BaseModel):
 class SimulationRun(BaseModel):
     model_group: str
     scenario: str
-    status: StatusTypes | None = StatusTypes.to_do
+    status: StatusTypes | None = StatusTypes.backlog
     simulation_run_type: SimulationRunTypes | None = SimulationRunTypes.icm
+
+
+class SimulationRunUpdate(BaseModel):
+    model_group: str | None = None
+    scenario: str | None = None
+    status: StatusTypes | None = None
+    simulation_run_type: SimulationRunTypes | None = None

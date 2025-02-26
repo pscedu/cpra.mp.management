@@ -66,3 +66,12 @@ class ClickUpController:
             raise Exception(response.json())
 
         return response.json()
+
+    def simulation_run_update(self, simulation_run, status):
+        task_url = f"{settings.clickup_settings.base_api_url}/task/{simulation_run.clickup_id}"
+        body = {"status": status}
+        response = http_r.put(task_url, headers=self.app_request_headers, data=json.dumps(body))
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+        return response.json()
