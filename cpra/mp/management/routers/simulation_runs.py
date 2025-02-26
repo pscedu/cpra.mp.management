@@ -89,6 +89,8 @@ async def create_simulation_run(
         session.add(db_simulation_run)
         session.commit()
         session.refresh(db_simulation_run)
+        simulation_run_data = db_simulation_run.model_dump()
+        simulation_run_data["clickup_data"] = task
         return db_simulation_run
 
 
