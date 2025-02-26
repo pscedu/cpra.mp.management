@@ -9,8 +9,8 @@ from sqlmodel import Session
 from cpra.mp.management.database import engine
 from cpra.mp.management.dependencies import get_current_active_user, query_scheme
 from cpra.mp.management.models.db_models import User as DBUser
-from cpra.mp.management.settings import settings
 from cpra.mp.management.models.response_models import User as ResponseUser
+from cpra.mp.management.settings import settings
 
 router = APIRouter(prefix="/clickup")
 

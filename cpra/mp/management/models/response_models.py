@@ -14,6 +14,7 @@ class User(BaseModel):
     full_name: str | None = None
     disabled: bool
 
+
 class SimulationRun(BaseModel):
     id: int
     model_group: str
