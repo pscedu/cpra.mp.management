@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 
 from alembic import context
 
@@ -65,8 +65,23 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        if connection.dialect.name == "postgresql":
+            current_tenant = context.get_x_argument(as_dictionary=True).get("tenant")
+            # set search path on the connection, which ensures that
+            # PostgreSQL will emit all CREATE / ALTER / DROP statements
+            # in terms of this schema by default
+
+            connection.execute(text('set search_path to "%s"' % current_tenant))
+            # in SQLAlchemy v2+ the search path change needs to be committed
+            connection.commit()
+
+            # make use of non-supported SQLAlchemy attribute to ensure
+            # the dialect reflects tables in terms of the current tenant name
+            connection.dialect.default_schema_name = current_tenant
+
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
         )
 
         with context.begin_transaction():
