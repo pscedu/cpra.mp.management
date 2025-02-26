@@ -23,10 +23,10 @@ jobs:
         pip install flake8==7.1.1 black==24.10.0 isort==5.13.2
     - name: Flake8 Lint
       run: |
-        flake8 --ignore=E501,W503 cpra/mp/management
+        flake8 --ignore=E501,W503 cpra/mp/management --exclude cpra/mp/management/alembic
     - name: Black Lint
       run: |
-        black --line-length 99 --check --diff cpra/mp/management
+        black --line-length 99 --check --diff cpra/mp/management --ignore cpra/mp/management/alembic
     - name: isort Lint
       run: |
-        isort --profile black --check-only --diff cpra/mp/management
+        isort --profile black --check-only --diff cpra/mp/management --skip cpra/mp/management/alembic
