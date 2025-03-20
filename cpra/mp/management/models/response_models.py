@@ -1,13 +1,21 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
+
+class BaseResponseModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+    )
 
 
-class Token(BaseModel):
+class Token(BaseResponseModel):
     access_token: str
     refresh_token: str
     token_type: str
 
 
-class User(BaseModel):
+class User(BaseResponseModel):
     id: int
     username: str
     email: str | None = None
@@ -16,7 +24,7 @@ class User(BaseModel):
     disabled: bool
 
 
-class SimulationRun(BaseModel):
+class SimulationRun(BaseResponseModel):
     id: int
     model_group: str
     scenario: str
