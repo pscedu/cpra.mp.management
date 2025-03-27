@@ -22,3 +22,14 @@ class SimulationRun(BaseModel):
     status: str
     simulation_run_type: str
     clickup_data: dict
+
+
+class Task(BaseModel):
+    id: str
+    simulation_run_id: int
+    name: str
+    description: str
+    status: dict
+    assignees: list
+    tags: list
+
