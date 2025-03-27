@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from cpra.mp.management.database import create_all
-from cpra.mp.management.routers import clickup, login, simulation_runs, users
+from cpra.mp.management.routers import clickup, login, simulation_runs, users, tasks
 
 app = FastAPI(root_path="/v1/management")
 
@@ -10,6 +10,7 @@ app.include_router(clickup.router)
 app.include_router(login.router)
 app.include_router(users.router)
 app.include_router(simulation_runs.router)
+app.include_router(tasks.router)
 
 
 @app.get("/")
