@@ -1,6 +1,6 @@
-from typing import Annotated
+from typing import Annotated, Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
@@ -9,7 +9,6 @@ from cpra.mp.management.dependencies import (
     get_current_active_admin,
     get_current_active_user,
 )
-from cpra.mp.management.models.db_models import SimulationRun as DBSimulationRun
 from cpra.mp.management.models.db_models import User as DBUser
 from cpra.mp.management.models.request_models import (
     Task as RequestTask,
@@ -24,83 +23,116 @@ from cpra.mp.management.models.response_models import (
 router = APIRouter(prefix="/tasks")
 
 
-# GET /management/v1/tasks/?task_id=1000&task_id=1001
-# GET /management/v1/tasks?tags=progress_tracking_task&task_id=1000
-# GET /management/v1/tasks?tags=bug&task_id=1000
-# @router.get("/", response_model=list[ResponseTask])
-# async def get_tasks(
-#     current_user: Annotated[DBUser, Depends(get_current_active_user)],
-# ):
-#     tasks_to_return = []
-#     # TODO: Optimization to use the bulk GET endpoint and search based on tags.
-#     # This will not support having very many Tasks.
-#     with Session(engine) as session:
-#         # UPDATE
-#         tasks = session.exec(select({})).all()
-#         for task in tasks:
-#             # Get Tasks from ClickUp
-#             try:
-#                 task = ClickUpController().task_get(task.clickup_id)
-#             except Exception as e:
-#                 print(repr(e))
-#                 raise HTTPException(
-#                     status_code=500, detail="ClickUp Task could not be found."
-#                 )
-#             task_data = task.model_dump()
-#             task_data["clickup_data"] = task
-#             tasks_to_return.append(task_data)
-#         return tasks_to_return
+@router.get("/", response_model=list[ResponseTask])
+async def get_tasks(
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
+    tags: Optional[List[str]] = Query([]),
+    statuses: Optional[List[str]] = Query([]),
+):
+    # Tags need to be separated into "general" and "data_dimension" tags.
+    separated_tags = {
+        "general": [],
+        "data_dimension": {}
+    }
+
+    for tag in tags:
+        if ":" in tag:
+            data_dimension_key, value = tag.split(":")
+            if data_dimension_key not in separated_tags:
+                separated_tags["data_dimension"][data_dimension_key] = [tag]
+            else:
+                separated_tags["data_dimension"][data_dimension_key].append(tag)
+        else:
+            separated_tags["general"].append(tag)
+
+    # Once they've been separated, determine which group of tags to send for filtering
+    # For simplicity, try to use either the scenario_id or model_group_id tags if they exist
+    tags_to_filter = []
+    if "scenario_id" in separated_tags["data_dimension"]:
+        tags_to_filter.extend(separated_tags["data_dimension"]["scenario_id"])
+    elif "model_group_id" in separated_tags["data_dimension"]:
+        tags_to_filter.extend(separated_tags["data_dimension"]["model_group_id"])
+    else:
+        tags_to_filter.extend(separated_tags["general"])
+
+    params = {}
+    if tags_to_filter:
+        params["tags[]"] = tags_to_filter
+
+    if statuses:
+        params["statuses[]"] = statuses
+
+    print(params)
+    try:
+        tasks = ClickUpController().task_bulk_get(params)
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(
+            status_code=500, detail="ClickUp Task could not be found."
+        )
+
+    tasks_to_return = []
+    for task in tasks:
+        # Unique tags for this task
+        task_tags = {tag.get("name") for tag in task.get("tags", [])}
+
+        # Validation criteria is that there needs to exist at least one tag from each unique data_dimension
+        # and at least one tag from the general
+        # Essentially, each "group" is OR'd and then they're all AND'd together.
+        # Naive solution is to iterate over each data_dimension and general and perform intersection checks
+        # If there is an intersection, then we're good, otherwise fail out
+        if not set(separated_tags["general"]).intersection(task_tags):
+            continue
+
+        or_fail = False
+        for _, tag_group in separated_tags["data_dimension"].items():
+            if not set(tag_group).intersection(task_tags):
+                or_fail = True
+                break
+
+        if or_fail:
+            continue
+
+        tasks_to_return.append(task)
+
+    return tasks_to_return
 
 
 # GET /management/v1/tasks/10001
-# @router.get("/{task_id}", response_model=ResponseTask)
-# async def get_task(
-#     task_id: int,
-#     current_user: Annotated[DBUser, Depends(get_current_active_user)],
-# ):
-#     # Get Task from ClickUp
-#     try:
-#         task = ClickUpController().task_get(task_id)
-#     except Exception as e:
-#         print(repr(e))
-#         raise HTTPException(
-#             status_code=500, detail="ClickUp Task could not be found."
-#         )
-#
-#     task_data = task.model_dump()
-#     task_data["clickup_data"] = task
-#     return task_data
+@router.get("/{task_id}", response_model=ResponseTask)
+async def get_task(
+    task_id: int,
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
+):
+    # Get Task from ClickUp
+    try:
+        task = ClickUpController().task_get(task_id)
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(
+            status_code=500, detail="ClickUp Task could not be found."
+        )
+
+    task_data = task.model_dump()
+    task_data["clickup_data"] = task
+    return task_data
 
 
 
 # POST /management/v1/tasks
-# {
-#     "task_id": 1000,
-#     "tags": ["bug"],
-#     "name": "Critical Error with Salinity",
-#     "assignees": [1000, 1001]
-# }
 @router.post("/", response_model=ResponseTask)
 async def create_task(
     task: RequestTask,
     current_user: Annotated[DBUser, Depends(get_current_active_admin)],
 ):
-    with Session(engine) as session:
-        # Check to make sure the simulation run id exists
-        simulation_run = session.get(DBSimulationRun, task.simulation_run_id)
-        if not simulation_run:
-            raise HTTPException(status_code=404, detail="Associated Simulation Run not found")
-
     task_data = task.model_dump()
-    # Need to add tags for model group + scenario, make tags required
-    task_data["tags"].extend([simulation_run.model_group, simulation_run.scenario])
+
     try:
         clickup_task = ClickUpController().task_create(task_data)
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp Task")
 
-    clickup_task["simulation_run_id"] = simulation_run.id
     return clickup_task
 
 
@@ -144,12 +176,10 @@ async def delete_task(
     task_id: str,
     current_user: Annotated[DBUser, Depends(get_current_active_admin)],
 ):
-    # TODO: Check whether this user created this task? Should any user be able to delete any task?
-    with Session(engine) as session:
-        try:
-            ClickUpController().task_delete(task_id)
-        except Exception as e:
-            print(repr(e))
-            raise HTTPException(status_code=500, detail="Failed to delete ClickUp Task")
+    try:
+        ClickUpController().task_delete(task_id)
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(status_code=500, detail="Failed to delete ClickUp Task")
 
-        return {"success": True}
+    return {"success": True}

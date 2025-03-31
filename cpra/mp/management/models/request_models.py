@@ -44,7 +44,6 @@ class SimulationRunUpdate(BaseModel):
 
 
 class Task(BaseModel):
-    simulation_run_id: int
     name: str
     tags: list[TaskTypes]
     description: str | None = None

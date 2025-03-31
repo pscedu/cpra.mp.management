@@ -82,6 +82,14 @@ class ClickUpController:
 
         return response.json()
 
+    def task_bulk_get(self, params: dict):
+        task_url = f"{settings.clickup_settings.base_api_url}/list/{self.settings.list_id}/task"
+        response = http_r.get(task_url, headers=self.app_request_headers, params=params)
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+        return response.json()["tasks"]
+
     def task_update(self, clickup_id, data_to_update: dict):
         task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}"
         response = http_r.put(task_url, headers=self.app_request_headers, data=json.dumps(data_to_update))

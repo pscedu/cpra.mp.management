@@ -26,7 +26,6 @@ class SimulationRun(BaseModel):
 
 class Task(BaseModel):
     id: str
-    simulation_run_id: int
     name: str
     description: str
     status: dict
