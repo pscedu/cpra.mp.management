@@ -113,13 +113,9 @@ async def get_task(
             status_code=500, detail="ClickUp Task could not be found."
         )
 
-    task_data = task.model_dump()
-    task_data["clickup_data"] = task
-    return task_data
+    return task
 
 
-
-# POST /management/v1/tasks
 @router.post("/", response_model=ResponseTask)
 async def create_task(
     task: RequestTask,
@@ -128,49 +124,41 @@ async def create_task(
     task_data = task.model_dump()
 
     try:
-        clickup_task = ClickUpController().task_create(task_data)
+        task = ClickUpController().task_create(task_data)
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp Task")
 
-    return clickup_task
+    return task
 
 
-# PUT /management/v1/tasks/1001
-# {
-#     "name": "New name",
-# }
-# @router.put("/{task_id}", response_model=ResponseTask)
-# async def update_task(
-#     task_id: int,
-#     request_task: RequestTaskUpdate,
-#     current_user: Annotated[DBUser, Depends(get_current_active_admin)],
-# ):
-#     with Session(engine) as session:
-#         task = session.get(DBTask, task_id)
-#         if not task:
-#             raise HTTPException(status_code=404, detail="Task not found")
-# 
-#         try:
-#             task = ClickUpController().task_update(
-#                 task, request_task.status
-#             )
-#         except Exception as e:
-#             print(repr(e))
-#             raise HTTPException(status_code=500, detail="Could not update ClickUp Task")
-# 
-#         request_task_data = request_task.model_dump(exclude_unset=True)
-#         task.sqlmodel_update(request_task_data)
-#         session.add(task)
-#         session.commit()
-#         session.refresh(task)
-#         task_data = task.model_dump()
-#         task_data["clickup_data"] = task
-# 
-#         return task_data
+@router.put("/{task_id}", response_model=ResponseTask)
+async def update_task(
+    task_id: int,
+    request_task: RequestTaskUpdate,
+    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
+):
+    # Get Task from ClickUp
+    try:
+        task = ClickUpController().task_get(task_id)
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(
+            status_code=500, detail="ClickUp Task could not be found."
+        )
+
+    try:
+        task_data = request_task.model_dump()
+        updated_task = ClickUpController().task_update(
+            task_id, task_data
+        )
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(status_code=500, detail="Could not update ClickUp Task")
+
+    return updated_task
 
 
-# DELETE /management/v1/tasks/1001
 @router.delete("/{task_id}")
 async def delete_task(
     task_id: str,
