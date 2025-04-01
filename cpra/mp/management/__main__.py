@@ -4,17 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from cpra.mp.management.database import create_all
 from cpra.mp.management.routers import clickup, login, simulation_runs, users
+from cpra.mp.management.settings import settings
 
 app = FastAPI(root_path="/v1/management")
 
-origins = [
-    "http://mpdp.coastal.la.gov",
-    "http://localhost:5173",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
