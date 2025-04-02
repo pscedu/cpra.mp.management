@@ -33,8 +33,8 @@ class User(BaseModel):
 
 
 class SimulationRun(BaseModel):
-    model_group: str
-    scenario: str
+    model_group_id: str
+    scenario_id: str
     status: StatusTypes | None = StatusTypes.backlog
     simulation_run_type: SimulationRunTypes | None = SimulationRunTypes.icm
 

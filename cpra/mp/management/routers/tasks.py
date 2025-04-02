@@ -1,10 +1,8 @@
 from typing import Annotated, Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
-from cpra.mp.management.database import engine
 from cpra.mp.management.dependencies import (
     get_current_active_admin,
     get_current_active_user,

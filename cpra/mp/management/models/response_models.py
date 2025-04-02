@@ -17,8 +17,8 @@ class User(BaseModel):
 
 class SimulationRun(BaseModel):
     id: int
-    model_group: str
-    scenario: str
+    model_group_id: str
+    scenario_id: str
     status: str
     simulation_run_type: str
     clickup_data: dict
