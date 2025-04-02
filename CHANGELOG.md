@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/pscedu/cpra.mp.management/compare/v0.6.2...v0.7.0) (2025-04-02)
+
+
+### Features
+
+* enable CORS middleware ([06efc7b](https://github.com/pscedu/cpra.mp.management/commit/06efc7bf1793dd92d201cb209156e5206844720a))
+* **login:** read refresh token from Authorization header ([b4c8c69](https://github.com/pscedu/cpra.mp.management/commit/b4c8c69ebe9f889838a50fa5d4a6f7681ceb6b99))
+* **response:** add ClickUp ID to user response model ([ccc0e88](https://github.com/pscedu/cpra.mp.management/commit/ccc0e88cd35ae41a118dd11b7f501177a92a66a4))
+* **response:** use camel case in response models ([e8fac2e](https://github.com/pscedu/cpra.mp.management/commit/e8fac2e58ba2eea1b7837b117ba1293aa9cbca40))
+* **settings:** make CORS origins a setting ([f839239](https://github.com/pscedu/cpra.mp.management/commit/f83923901b0f5833c82efbb3f117075ac2f52353))
+
+
+### Bug Fixes
+
+* **tokens:** remove user info claims from access token ([3ef33a5](https://github.com/pscedu/cpra.mp.management/commit/3ef33a58a1f79d39542c5a540dc25d591739986c))
+
 ## [0.6.2](https://github.com/pscedu/cpra.mp.management/compare/v0.6.1...v0.6.2) (2025-02-26)
 
 

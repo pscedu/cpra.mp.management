@@ -1,16 +1,16 @@
 from datetime import timedelta
-from typing import Annotated
 from urllib.parse import urlencode
 
 import requests
-from fastapi import APIRouter, Body, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
-from jwt import PyJWTError
 from sqlmodel import Session
 
-from cpra.mp.management.controllers.token_controllers import create_token, get_token
+from cpra.mp.management.controllers.token_controllers import create_token
 from cpra.mp.management.controllers.user_controllers import get_user
 from cpra.mp.management.database import engine
+from cpra.mp.management.dependencies import get_refresh_user
+from cpra.mp.management.models.db_models import User as DBUser
 from cpra.mp.management.models.response_models import Token
 from cpra.mp.management.settings import settings
 
@@ -109,26 +109,13 @@ async def oidc_callback(code: str, request: Request):
     return f"{ci_logon_settings.portal_redirect_uri}?{urlencode(params, doseq=True)}"
 
 
-@router.post("/refresh", response_model=Token)
-async def refresh_access_token(refresh_token: Annotated[str, Body(embed=True)]):
-    try:
-        payload = get_token(refresh_token)
-        username: str = payload.get("sub")
-        token_type: str = payload.get("type")
-        if username is None or token_type != "refresh":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    except PyJWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
-    user = get_user({"username": username})
-    if not user or user.disabled:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
-
+@router.get("/refresh", response_model=Token)
+async def refresh_access_token(current_user: DBUser = Depends(get_refresh_user)):
     # Generate new access token
     access_token = create_token(
-        user,
+        current_user,
         "access",
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
 
-    return Token(access_token=access_token, refresh_token=None, token_type="bearer")
+    return Token(access_token=access_token, token_type="bearer")

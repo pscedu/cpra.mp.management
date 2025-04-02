@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     clickup_settings: ClickUpSettings
     db_url: str
     debug: bool = True
+    cors_origins: list[str]
 
 
 settings = Settings(**load_config("config.json"))

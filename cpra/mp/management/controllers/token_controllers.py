@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from jwt.exceptions import InvalidTokenError
 
 from cpra.mp.management.models.db_models import User
 from cpra.mp.management.settings import settings
@@ -8,11 +9,6 @@ from cpra.mp.management.settings import settings
 
 def create_token(user: User, token_type: str, expires_delta: timedelta | None = None) -> str:
     to_encode = {"sub": user.username, "type": token_type}
-
-    # TODO: This data probably should come from a separate endpoint
-    # (e.g., /user/me).
-    if token_type == "access":
-        to_encode.update({"name": user.full_name, "clickup": user.clickup_id, "email": user.email})
 
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -24,5 +20,21 @@ def create_token(user: User, token_type: str, expires_delta: timedelta | None = 
     return encoded_jwt
 
 
-def get_token(token: str) -> dict:
+def get_token_payload(token: str) -> dict:
     return jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
+
+
+def get_valid_token_payload(token: str, token_type: str = "access") -> bool:
+    """Check whether a token is valid and is of the expected type.
+    If so, return its payload."""
+    if token is None:
+        return None
+    try:
+        payload = get_token_payload(token)
+    except InvalidTokenError:
+        return None
+
+    if payload.get("sub") is None or payload.get("type") != token_type:
+        return None
+
+    return payload
