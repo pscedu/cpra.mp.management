@@ -34,7 +34,7 @@ class SimulationRun(BaseResponseModel):
     clickup_data: dict
 
 
-class Task(BaseModel):
+class Task(BaseResponseModel):
     id: str
     name: str
     description: str
