@@ -92,7 +92,9 @@ class ClickUpController:
 
     def task_update(self, clickup_id, data_to_update: dict):
         task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}"
-        response = http_r.put(task_url, headers=self.app_request_headers, data=json.dumps(data_to_update))
+        response = http_r.put(
+            task_url, headers=self.app_request_headers, data=json.dumps(data_to_update)
+        )
         if response.status_code != 200:
             raise Exception(response.json())
 

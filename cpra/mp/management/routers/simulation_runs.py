@@ -36,7 +36,9 @@ async def get_simulation_runs(
         for simulation_run in simulation_runs:
             # Get simulation runs from ClickUp
             try:
-                task = ClickUpController().task_get(simulation_run.clickup_id, include_subtasks=True)
+                task = ClickUpController().task_get(
+                    simulation_run.clickup_id, include_subtasks=True
+                )
             except Exception as e:
                 print(repr(e))
                 raise HTTPException(

@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, List
+from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -8,15 +8,9 @@ from cpra.mp.management.dependencies import (
     get_current_active_user,
 )
 from cpra.mp.management.models.db_models import User as DBUser
-from cpra.mp.management.models.request_models import (
-    Task as RequestTask,
-)
-from cpra.mp.management.models.request_models import (
-    TaskUpdate as RequestTaskUpdate,
-)
-from cpra.mp.management.models.response_models import (
-    Task as ResponseTask,
-)
+from cpra.mp.management.models.request_models import Task as RequestTask
+from cpra.mp.management.models.request_models import TaskUpdate as RequestTaskUpdate
+from cpra.mp.management.models.response_models import Task as ResponseTask
 
 router = APIRouter(prefix="/tasks")
 
@@ -28,10 +22,7 @@ async def get_tasks(
     statuses: Optional[List[str]] = Query([]),
 ):
     # Tags need to be separated into "general" and "data_dimension" tags.
-    separated_tags = {
-        "general": [],
-        "data_dimension": {}
-    }
+    separated_tags = {"general": [], "data_dimension": {}}
 
     for tag in tags:
         if ":" in tag:
@@ -65,9 +56,7 @@ async def get_tasks(
         tasks = ClickUpController().task_bulk_get(params)
     except Exception as e:
         print(repr(e))
-        raise HTTPException(
-            status_code=500, detail="ClickUp Task could not be found."
-        )
+        raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
 
     tasks_to_return = []
     for task in tasks:
@@ -107,9 +96,7 @@ async def get_task(
         task = ClickUpController().task_get(task_id)
     except Exception as e:
         print(repr(e))
-        raise HTTPException(
-            status_code=500, detail="ClickUp Task could not be found."
-        )
+        raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
 
     return task
 
@@ -138,18 +125,8 @@ async def update_task(
 ):
     # Get Task from ClickUp
     try:
-        task = ClickUpController().task_get(task_id)
-    except Exception as e:
-        print(repr(e))
-        raise HTTPException(
-            status_code=500, detail="ClickUp Task could not be found."
-        )
-
-    try:
         task_data = request_task.model_dump()
-        updated_task = ClickUpController().task_update(
-            task_id, task_data
-        )
+        updated_task = ClickUpController().task_update(task_id, task_data)
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not update ClickUp Task")

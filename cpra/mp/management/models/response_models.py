@@ -41,4 +41,3 @@ class Task(BaseResponseModel):
     status: dict
     assignees: list
     tags: list
-
