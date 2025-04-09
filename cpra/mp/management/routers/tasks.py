@@ -21,28 +21,23 @@ async def get_tasks(
     tags: Optional[List[str]] = Query([]),
     statuses: Optional[List[str]] = Query([]),
 ):
-    # Tags need to be separated into "general" and "data_dimension" tags.
-    separated_tags = {"general": [], "data_dimension": {}}
-
+    # TODO: Add restriction for requiring tags, make it optional for now
+    separated_tags = {}
     for tag in tags:
         if ":" in tag:
             data_dimension_key, value = tag.split(":")
             if data_dimension_key not in separated_tags:
-                separated_tags["data_dimension"][data_dimension_key] = [tag]
+                separated_tags[data_dimension_key] = [tag]
             else:
-                separated_tags["data_dimension"][data_dimension_key].append(tag)
-        else:
-            separated_tags["general"].append(tag)
+                separated_tags[data_dimension_key].append(tag)
 
-    # Once they've been separated, determine which group of tags to send for filtering
-    # For simplicity, try to use either the scenario_id or model_group_id tags if they exist
     tags_to_filter = []
-    if "scenario_id" in separated_tags["data_dimension"]:
-        tags_to_filter.extend(separated_tags["data_dimension"]["scenario_id"])
-    elif "model_group_id" in separated_tags["data_dimension"]:
-        tags_to_filter.extend(separated_tags["data_dimension"]["model_group_id"])
-    else:
-        tags_to_filter.extend(separated_tags["general"])
+    if "scenario_id" in separated_tags:
+        tags_to_filter.extend(separated_tags["scenario_id"])
+    elif "model_group_id" in separated_tags:
+        tags_to_filter.extend(separated_tags["model_group_id"])
+    elif len(separated_tags) > 0:
+            tags_to_filter.extend(separated_tags[next(iter(separated_tags))])
 
     params = {}
     if tags_to_filter:
@@ -59,28 +54,28 @@ async def get_tasks(
         raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
 
     tasks_to_return = []
-    for task in tasks:
-        # Unique tags for this task
-        task_tags = {tag.get("name") for tag in task.get("tags", [])}
+    if len(tags) > 0:
+        for task in tasks:
+            # Unique tags for this task
+            task_tags = {tag.get("name") for tag in task.get("tags", [])}
 
-        # Validation criteria is that there needs to exist at least one tag from each unique data_dimension
-        # and at least one tag from the general
-        # Essentially, each "group" is OR'd and then they're all AND'd together.
-        # Naive solution is to iterate over each data_dimension and general and perform intersection checks
-        # If there is an intersection, then we're good, otherwise fail out
-        if not set(separated_tags["general"]).intersection(task_tags):
-            continue
+            # Validation criteria is that there needs to exist at least one tag from each unique data_dimension
+            # and at least one tag from the general
+            # Essentially, each "group" is OR'd and then they're all AND'd together.
+            # Naive solution is to iterate over each data_dimension and general and perform intersection checks
+            # If there is an intersection, then we're good, otherwise fail out
+            or_fail = False
+            for _, tag_group in separated_tags.items():
+                if not set(tag_group).intersection(task_tags):
+                    or_fail = True
+                    break
 
-        or_fail = False
-        for _, tag_group in separated_tags["data_dimension"].items():
-            if not set(tag_group).intersection(task_tags):
-                or_fail = True
-                break
+            if or_fail:
+                continue
 
-        if or_fail:
-            continue
-
-        tasks_to_return.append(task)
+            tasks_to_return.append(task)
+    else:
+        tasks_to_return.extend(tasks)
 
     return tasks_to_return
 
