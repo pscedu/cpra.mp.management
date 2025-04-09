@@ -37,7 +37,7 @@ async def get_tasks(
     elif "model_group_id" in separated_tags:
         tags_to_filter.extend(separated_tags["model_group_id"])
     elif len(separated_tags) > 0:
-            tags_to_filter.extend(separated_tags[next(iter(separated_tags))])
+        tags_to_filter.extend(separated_tags[next(iter(separated_tags))])
 
     params = {}
     if tags_to_filter:
