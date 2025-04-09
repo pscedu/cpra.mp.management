@@ -41,3 +41,8 @@ class Task(BaseResponseModel):
     status: dict
     assignees: list
     tags: list
+    url: str
+    creator: dict
+    date_created: str
+    date_updated: str
+    date_closed: str | None = None
