@@ -24,8 +24,6 @@ class ClickUpController:
 
         # The data for the task you want to create
         task_data = {"name": task_name}
-
-        # Make the POST request to create the task
         response = http_r.post(
             task_url, headers=self.app_request_headers, data=json.dumps(task_data)
         )
@@ -54,26 +52,49 @@ class ClickUpController:
             if response.status_code != 200:
                 raise Exception(response.json())
 
-    def simulation_run_delete(self, simulation_run):
+    def task_create(self, task_data: dict):
+        # Make the POST request to create the task
+        task_url = f"{settings.clickup_settings.base_api_url}/list/{self.settings.list_id}/task"
+        response = http_r.post(
+            task_url, headers=self.app_request_headers, data=json.dumps(task_data)
+        )
+
+        if response.status_code == 200:
+            task = response.json()
+        else:
+            raise Exception(response.json())
+
+        return task
+
+    def task_delete(self, clickup_id):
         # Set an archive tag on the task and its children task?
         # Don't need to set this tag on tasks that aren't part of the template.
-        task_url = f"{settings.clickup_settings.base_api_url}/task/{simulation_run.clickup_id}"
+        task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}"
         response = http_r.delete(task_url, headers=self.app_request_headers)
         if response.status_code != 204:
             raise Exception(response.content)
 
-    def simulation_run_get(self, simulation_run):
-        task_url = f"{settings.clickup_settings.base_api_url}/task/{simulation_run.clickup_id}?include_subtasks=true"
+    def task_get(self, clickup_id, include_subtasks=False):
+        task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}?{'include_subtasks=true' if include_subtasks else ''}"
         response = http_r.get(task_url, headers=self.app_request_headers)
         if response.status_code != 200:
             raise Exception(response.json())
 
         return response.json()
 
-    def simulation_run_update(self, simulation_run, status):
-        task_url = f"{settings.clickup_settings.base_api_url}/task/{simulation_run.clickup_id}"
-        body = {"status": status}
-        response = http_r.put(task_url, headers=self.app_request_headers, data=json.dumps(body))
+    def task_bulk_get(self, params: dict):
+        task_url = f"{settings.clickup_settings.base_api_url}/list/{self.settings.list_id}/task"
+        response = http_r.get(task_url, headers=self.app_request_headers, params=params)
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+        return response.json()["tasks"]
+
+    def task_update(self, clickup_id, data_to_update: dict):
+        task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}"
+        response = http_r.put(
+            task_url, headers=self.app_request_headers, data=json.dumps(data_to_update)
+        )
         if response.status_code != 200:
             raise Exception(response.json())
 

@@ -27,8 +27,22 @@ class User(BaseResponseModel):
 
 class SimulationRun(BaseResponseModel):
     id: int
-    model_group: str
-    scenario: str
+    model_group_id: str
+    scenario_id: str
     status: str
     simulation_run_type: str
     clickup_data: dict
+
+
+class Task(BaseResponseModel):
+    id: str
+    name: str
+    description: str
+    status: dict
+    assignees: list
+    tags: list
+    url: str
+    creator: dict
+    date_created: str
+    date_updated: str
+    date_closed: str | None = None

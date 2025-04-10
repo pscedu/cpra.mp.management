@@ -36,7 +36,9 @@ async def get_simulation_runs(
         for simulation_run in simulation_runs:
             # Get simulation runs from ClickUp
             try:
-                task = ClickUpController().simulation_run_get(simulation_run)
+                task = ClickUpController().task_get(
+                    simulation_run.clickup_id, include_subtasks=True
+                )
             except Exception as e:
                 print(repr(e))
                 raise HTTPException(
@@ -59,7 +61,7 @@ async def get_simulation_run(
             raise HTTPException(status_code=404, detail="Simulation Run not found")
         # Get simulation run from ClickUp
         try:
-            task = ClickUpController().simulation_run_get(simulation_run)
+            task = ClickUpController().task_get(simulation_run.clickup_id, include_subtasks=True)
         except Exception as e:
             print(repr(e))
             raise HTTPException(
@@ -106,8 +108,8 @@ async def update_simulation_run(
             raise HTTPException(status_code=404, detail="Simulation Run not found")
 
         try:
-            task = ClickUpController().simulation_run_update(
-                simulation_run, request_simulation_run.status
+            task = ClickUpController().task_update(
+                simulation_run.clickup_id, {"status": request_simulation_run.status}
             )
         except Exception as e:
             print(repr(e))
@@ -134,7 +136,7 @@ async def delete_simulation_run(
         if not simulation_run:
             raise HTTPException(status_code=404, detail="Simulation Run not found")
         try:
-            ClickUpController().simulation_run_delete(simulation_run)
+            ClickUpController().task_delete(simulation_run.clickup_id)
         except Exception as e:
             print(repr(e))
             raise HTTPException(status_code=500, detail="Failed to delete ClickUp Simulation Run")

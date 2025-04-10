@@ -14,8 +14,8 @@ class User(SQLModel, table=True):
 
 class SimulationRun(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    model_group: str
-    scenario: str
+    model_group_id: str
+    scenario_id: str
     status: str
     simulation_run_type: str
     clickup_id: str | None = None

@@ -14,6 +14,11 @@ class StatusTypes(str, Enum):
     done = "done"
 
 
+class TaskTypes(str, Enum):
+    bug = "bug"
+    narrative = "narrative"
+
+
 class SimulationRunTypes(str, Enum):
     icm = "ICM"
     adcirc = "ADCIRC"
@@ -28,11 +33,27 @@ class User(BaseModel):
 
 
 class SimulationRun(BaseModel):
-    model_group: str
-    scenario: str
+    model_group_id: str
+    scenario_id: str
     status: StatusTypes | None = StatusTypes.backlog
     simulation_run_type: SimulationRunTypes | None = SimulationRunTypes.icm
 
 
 class SimulationRunUpdate(BaseModel):
+    status: StatusTypes | None = None
+
+
+class Task(BaseModel):
+    name: str
+    tags: list[TaskTypes]
+    description: str | None = None
+    assignees: list[int] | None = None
+    status: StatusTypes | None = StatusTypes.backlog
+
+
+class TaskUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    tags: list[str] | None = None
+    assignees: list[int] | None = None
     status: StatusTypes | None = None
