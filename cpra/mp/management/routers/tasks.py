@@ -83,7 +83,7 @@ async def get_tasks(
 # GET /management/v1/tasks/10001
 @router.get("/{task_id}", response_model=ResponseTask)
 async def get_task(
-    task_id: int,
+    task_id: str,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     # Get Task from ClickUp
@@ -114,7 +114,7 @@ async def create_task(
 
 @router.put("/{task_id}", response_model=ResponseTask)
 async def update_task(
-    task_id: int,
+    task_id: str,
     request_task: RequestTaskUpdate,
     current_user: Annotated[DBUser, Depends(get_current_active_admin)],
 ):
