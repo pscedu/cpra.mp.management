@@ -98,7 +98,7 @@ async def get_task(
 @router.post("/", response_model=ResponseTask)
 async def create_task(
     task: RequestTask,
-    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     task_data = task.model_dump()
 
@@ -115,7 +115,7 @@ async def create_task(
 async def update_task(
     task_id: str,
     request_task: RequestTaskUpdate,
-    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     # Get Task from ClickUp
     try:
@@ -131,7 +131,7 @@ async def update_task(
 @router.delete("/{task_id}")
 async def delete_task(
     task_id: str,
-    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     try:
         ClickUpController().task_delete(task_id)
