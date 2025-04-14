@@ -20,6 +20,7 @@ async def get_tasks(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
     tags: Optional[List[str]] = Query([]),
     statuses: Optional[List[str]] = Query([]),
+    get_comments: Optional[bool] = Query(False),
 ):
     # TODO: Add restriction for requiring tags, make it optional for now
     separated_tags = {}
@@ -73,6 +74,8 @@ async def get_tasks(
             if or_fail:
                 continue
 
+            if get_comments:
+                task["comments"] = ClickUpController().task_get_comments(task["id"])
             tasks_to_return.append(task)
     else:
         tasks_to_return.extend(tasks)
@@ -84,10 +87,13 @@ async def get_tasks(
 async def get_task(
     task_id: str,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
+    get_comments: Optional[bool] = Query(False),
 ):
     # Get Task from ClickUp
     try:
         task = ClickUpController().task_get(task_id)
+        if get_comments:
+            task["comments"] = ClickUpController().task_get_comments(task_id)
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
