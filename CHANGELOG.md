@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/pscedu/cpra.mp.management/compare/v0.8.0...v0.8.1) (2025-04-14)
+
+
+### Bug Fixes
+
+* change task_id from int to str ([c425700](https://github.com/pscedu/cpra.mp.management/commit/c425700c393052c903064420a725bfe6885d483e))
+
 ## [0.8.0](https://github.com/pscedu/cpra.mp.management/compare/v0.7.0...v0.8.0) (2025-04-10)
 
 
