@@ -80,7 +80,6 @@ async def get_tasks(
     return tasks_to_return
 
 
-# GET /management/v1/tasks/10001
 @router.get("/{task_id}", response_model=ResponseTask)
 async def get_task(
     task_id: str,
