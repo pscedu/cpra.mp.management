@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
 from cpra.mp.management.dependencies import (
-    get_current_active_admin,
     get_current_active_user,
 )
 from cpra.mp.management.models.db_models import User as DBUser
 from cpra.mp.management.models.request_models import Task as RequestTask
 from cpra.mp.management.models.request_models import TaskUpdate as RequestTaskUpdate
+from cpra.mp.management.models.request_models import Comment as RequestComment
 from cpra.mp.management.models.response_models import Task as ResponseTask
 
 router = APIRouter(prefix="/tasks")
@@ -146,3 +146,22 @@ async def delete_task(
         raise HTTPException(status_code=500, detail="Failed to delete ClickUp Task")
 
     return {"success": True}
+
+
+@router.post("/{task_id}/comments", response_model=ResponseTask)
+async def create_task_comment(
+        task_id: str,
+        comment: RequestComment,
+        current_user: Annotated[DBUser, Depends(get_current_active_user)],
+):
+    comment_data = comment.model_dump()
+
+    try:
+        task = ClickUpController().task_get(task_id)
+        ClickUpController().comment_create(task_id, comment_data)
+        task["comments"] = ClickUpController().task_get_comments(task_id)
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(status_code=500, detail="Could not create ClickUp Comment")
+
+    return task
