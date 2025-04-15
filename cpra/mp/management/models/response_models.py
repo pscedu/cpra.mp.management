@@ -46,3 +46,15 @@ class Task(BaseResponseModel):
     date_created: str
     date_updated: str
     date_closed: str | None = None
+    comments: list | None = []
+
+
+class CommentCreate(BaseResponseModel):
+    id: str
+
+
+class Comment(CommentCreate):
+    comment_text: str
+    user: dict
+    assignee: dict | None = None
+    date: str
