@@ -20,7 +20,7 @@ async def get_tasks(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
     tags: Optional[List[str]] = Query([]),
     statuses: Optional[List[str]] = Query([]),
-    get_comments: Optional[bool] = Query(False),
+    get_comments: Optional[bool] = Query(False, alias="getComments"),
 ):
     # TODO: Add restriction for requiring tags, make it optional for now
     separated_tags = {}
@@ -87,7 +87,7 @@ async def get_tasks(
 async def get_task(
     task_id: str,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
-    get_comments: Optional[bool] = Query(False),
+    get_comments: Optional[bool] = Query(False, alias="getComments"),
 ):
     # Get Task from ClickUp
     try:
@@ -148,7 +148,7 @@ async def delete_task(
     return {"success": True}
 
 
-@router.post("/{task_id}/comments", response_model=ResponseTask)
+@router.put("/{task_id}/comments", response_model=ResponseTask)
 async def create_task_comment(
         task_id: str,
         comment: RequestComment,
@@ -158,7 +158,7 @@ async def create_task_comment(
 
     try:
         task = ClickUpController().task_get(task_id)
-        ClickUpController().comment_create(task_id, comment_data)
+        ClickUpController().task_create_comment(task_id, comment_data)
         task["comments"] = ClickUpController().task_get_comments(task_id)
     except Exception as e:
         print(repr(e))
