@@ -1,7 +1,14 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 
+class BaseRequestModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+    )
 
 class RoleTypes(str, Enum):
     user = "user"
@@ -14,46 +21,51 @@ class StatusTypes(str, Enum):
     done = "done"
 
 
-class TaskTypes(str, Enum):
-    bug = "bug"
-    narrative = "narrative"
-
-
 class SimulationRunTypes(str, Enum):
     icm = "ICM"
     adcirc = "ADCIRC"
     clara = "CLARA"
 
 
-class User(BaseModel):
+class User(BaseRequestModel):
     username: str
     full_name: str | None = None
     disabled: bool | None = False
     role: RoleTypes | None = RoleTypes.user
 
 
-class SimulationRun(BaseModel):
+class SimulationRun(BaseRequestModel):
     model_group_id: str
     scenario_id: str
     status: StatusTypes | None = StatusTypes.backlog
     simulation_run_type: SimulationRunTypes | None = SimulationRunTypes.icm
 
 
-class SimulationRunUpdate(BaseModel):
+class SimulationRunUpdate(BaseRequestModel):
     status: StatusTypes | None = None
 
 
-class Task(BaseModel):
+class Task(BaseRequestModel):
     name: str
-    tags: list[TaskTypes]
+    tags: list[str]
     description: str | None = None
     assignees: list[int] | None = None
     status: StatusTypes | None = StatusTypes.backlog
 
 
-class TaskUpdate(BaseModel):
+class TaskUpdate(BaseRequestModel):
     name: str | None = None
     description: str | None = None
     tags: list[str] | None = None
     assignees: list[int] | None = None
     status: StatusTypes | None = None
+
+
+class Comment(BaseRequestModel):
+    comment_text: str
+    assignee: int | None = None
+    notify_all: bool | None = False
+
+
+class CommentUpdate(Comment):
+    resolved: bool | None = False
