@@ -4,164 +4,72 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
 from cpra.mp.management.dependencies import (
-    get_current_active_admin,
     get_current_active_user,
 )
 from cpra.mp.management.models.db_models import User as DBUser
-from cpra.mp.management.models.request_models import Task as RequestTask
-from cpra.mp.management.models.request_models import TaskUpdate as RequestTaskUpdate
-from cpra.mp.management.models.response_models import Task as ResponseTask
+from cpra.mp.management.models.request_models import Comment as RequestComment
+from cpra.mp.management.models.request_models import CommentUpdate as RequestCommentUpdate
+from cpra.mp.management.models.response_models import CommentCreate as ResponseCommentCreate, Comment as ResponseComment
 
-router = APIRouter(prefix="/tasks")
-
-
-# GET /management/v1/comments/?task_id=1001
-@router.get("/", response_model=list[ResponseTask])
-async def get_tasks(
-    current_user: Annotated[DBUser, Depends(get_current_active_user)],
-    tags: Optional[List[str]] = Query([]),
-    statuses: Optional[List[str]] = Query([]),
-):
-    # TODO: Add restriction for requiring tags, make it optional for now
-    separated_tags = {}
-    for tag in tags:
-        if ":" in tag:
-            data_dimension_key, value = tag.split(":")
-            if data_dimension_key not in separated_tags:
-                separated_tags[data_dimension_key] = [tag]
-            else:
-                separated_tags[data_dimension_key].append(tag)
-
-    tags_to_filter = []
-    if "scenario_id" in separated_tags:
-        tags_to_filter.extend(separated_tags["scenario_id"])
-    elif "model_group_id" in separated_tags:
-        tags_to_filter.extend(separated_tags["model_group_id"])
-    elif len(separated_tags) > 0:
-        tags_to_filter.extend(separated_tags[next(iter(separated_tags))])
-
-    params = {}
-    if tags_to_filter:
-        params["tags[]"] = tags_to_filter
-
-    if statuses:
-        params["statuses[]"] = statuses
-
-    print(params)
-    try:
-        tasks = ClickUpController().task_bulk_get(params)
-    except Exception as e:
-        print(repr(e))
-        raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
-
-    tasks_to_return = []
-    if len(tags) > 0:
-        for task in tasks:
-            # Unique tags for this task
-            task_tags = {tag.get("name") for tag in task.get("tags", [])}
-
-            # Validation criteria is that there needs to exist at least one tag from each unique data_dimension
-            # and at least one tag from the general
-            # Essentially, each "group" is OR'd and then they're all AND'd together.
-            # Naive solution is to iterate over each data_dimension and general and perform intersection checks
-            # If there is an intersection, then we're good, otherwise fail out
-            or_fail = False
-            for _, tag_group in separated_tags.items():
-                if not set(tag_group).intersection(task_tags):
-                    or_fail = True
-                    break
-
-            if or_fail:
-                continue
-
-            tasks_to_return.append(task)
-    else:
-        tasks_to_return.extend(tasks)
-
-    return tasks_to_return
+router = APIRouter(prefix="/comments")
 
 
-# GET /management/v1/comments/1002/replies
-@router.get("/{task_id}", response_model=ResponseTask)
-async def get_task(
-    task_id: str,
+@router.get("/{comment_id}/replies", response_model=List[ResponseComment])
+async def get_comment_replies(
+    comment_id: str,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
-    # Get Task from ClickUp
     try:
-        task = ClickUpController().task_get(task_id)
+        replies = ClickUpController().comment_get_replies(comment_id)
     except Exception as e:
         print(repr(e))
-        raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
+        raise HTTPException(status_code=500, detail="Could not get replies")
 
-    return task
+    return replies
 
-# POST /management/v1/comments
-# {
-#     "task_id": 1001,
-#     "commentText": "Hello world",
-#     "assignees": [1000],
-#     "notifyAll": true
-# }
-@router.post("/", response_model=ResponseTask)
-async def create_task(
-    task: RequestTask,
-    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
-):
-    task_data = task.model_dump()
 
-    try:
-        task = ClickUpController().task_create(task_data)
-    except Exception as e:
-        print(repr(e))
-        raise HTTPException(status_code=500, detail="Could not create ClickUp Task")
-
-    return task
-
-# POST /management/v1/comments/1002/replies
-# {
-#     "commentText": "Hello world",
-#     "assignees": [1000],
-#     "notifyAll": true,
-# }
+@router.post("/{comment_id}/replies", response_model=ResponseCommentCreate)
 async def create_reply(
-
+    comment_id: str,
+    reply: RequestComment,
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
-    return None
-
-# PUT /management/v1/comments/1002
-# {
-#     "commentText": "New comment text",
-# }
-@router.put("/{task_id}", response_model=ResponseTask)
-async def update_task(
-    task_id: str,
-    request_task: RequestTaskUpdate,
-    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
-):
-    # Get Task from ClickUp
+    comment_data = reply.model_dump()
     try:
-        task_data = request_task.model_dump()
-        updated_task = ClickUpController().task_update(task_id, task_data)
+        reply = ClickUpController.comment_create_reply(comment_id, comment_data)
     except Exception as e:
         print(repr(e))
-        raise HTTPException(status_code=500, detail="Could not update ClickUp Task")
+        raise HTTPException(status_code=500, detail="Could not create ClickUp reply")
 
-    return updated_task
+    return reply
 
 
-# DELETE /management/v1/comments/1002
-@router.delete("/{task_id}")
-async def delete_task(
-    task_id: str,
-    current_user: Annotated[DBUser, Depends(get_current_active_admin)],
+@router.put("/{comment_id}")
+async def update_comment(
+    comment_id: str,
+    request_comment: RequestCommentUpdate,
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
+    # Get Comment from ClickUp
     try:
-        ClickUpController().task_delete(task_id)
+        comment_data = request_comment.model_dump()
+        ClickUpController().comment_update(comment_id, comment_data)
     except Exception as e:
         print(repr(e))
-        raise HTTPException(status_code=500, detail="Failed to delete ClickUp Task")
+        raise HTTPException(status_code=500, detail="Could not update ClickUp Comment")
 
     return {"success": True}
 
 
+@router.delete("/{comment_id}")
+async def delete_comment(
+    comment_id: str,
+    current_user: Annotated[DBUser, Depends(get_current_active_user)],
+):
+    try:
+        ClickUpController().comment_delete(comment_id)
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(status_code=500, detail="Failed to delete ClickUp Comment")
+
+    return {"success": True}
