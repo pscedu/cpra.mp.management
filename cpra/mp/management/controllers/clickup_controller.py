@@ -19,7 +19,7 @@ class ClickUpController:
         }
 
     def simulation_run_create(self, simulation_run):
-        task_name = f"{simulation_run.model_group} {simulation_run.scenario}"
+        task_name = f"{simulation_run.model_group_id} {simulation_run.scenario_id}"
         task_url = f"{settings.clickup_settings.base_api_url}/list/{self.settings.list_id}/taskTemplate/{self.settings.simulation_run_type_template_id_mapping[simulation_run.simulation_run_type]}"
 
         # The data for the task you want to create
@@ -32,11 +32,11 @@ class ClickUpController:
         if response.status_code == 200:
             response = response.json()
             task = response.get("task", {})
-            self.task_add_tags(task, [simulation_run.model_group, simulation_run.scenario])
+            self.task_add_tags(task, [f"model_group_id:{simulation_run.model_group_id}", f"scenario_id:{simulation_run.scenario_id}"])
 
             # Iterate through subtasks and add tags there as well.
             for subtask in task.get("subtasks", []):
-                self.task_add_tags(subtask, [simulation_run.model_group, simulation_run.scenario])
+                self.task_add_tags(subtask, [f"model_group_id:{simulation_run.model_group_id}", f"scenario_id:{simulation_run.scenario_id}"])
         else:
             # TODO: What do we actually want to raise here?
             raise Exception(response.json())
@@ -95,6 +95,52 @@ class ClickUpController:
         response = http_r.put(
             task_url, headers=self.app_request_headers, data=json.dumps(data_to_update)
         )
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+        return response.json()
+
+    def task_get_comments(self, clickup_id):
+        comment_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}/comment"
+        response = http_r.get(comment_url, headers=self.app_request_headers)
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+        return response.json()["comments"]
+
+    def task_create_comment(self, clickup_id, comment_data):
+        comment_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}/comment"
+        response = http_r.post(comment_url, json=comment_data, headers=self.app_request_headers)
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+        return response.json()
+
+    def comment_update(self, clickup_id, data_to_update: dict):
+        comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}"
+        response = http_r.put(comment_url, json=data_to_update, headers=self.app_request_headers)
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+    def comment_delete(self, clickup_id):
+        comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}"
+        response = http_r.delete(comment_url, headers=self.app_request_headers)
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+
+    def comment_get_replies(self, clickup_id):
+        comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}/reply"
+        response = http_r.get(comment_url, headers=self.app_request_headers)
+        if response.status_code != 200:
+            raise Exception(response.json())
+
+        return response.json()["comments"]
+
+
+    def comment_create_reply(self, clickup_id, comment_data):
+        comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}/reply"
+        response = http_r.post(comment_url, json=comment_data, headers=self.app_request_headers)
         if response.status_code != 200:
             raise Exception(response.json())
 
