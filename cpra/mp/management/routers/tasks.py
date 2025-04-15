@@ -148,7 +148,7 @@ async def delete_task(
     return {"success": True}
 
 
-@router.put("/{task_id}/comments", response_model=ResponseTask)
+@router.post("/{task_id}/comments", response_model=ResponseTask)
 async def create_task_comment(
         task_id: str,
         comment: RequestComment,
