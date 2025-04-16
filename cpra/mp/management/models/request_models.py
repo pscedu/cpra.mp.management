@@ -56,7 +56,6 @@ class Task(BaseRequestModel):
 class TaskUpdate(BaseRequestModel):
     name: str | None = None
     description: str | None = None
-    tags: list[str] | None = None
     assignees: list[int] | None = None
     status: StatusTypes | None = None
 
