@@ -67,5 +67,7 @@ class Comment(BaseRequestModel):
     notify_all: bool | None = False
 
 
-class CommentUpdate(Comment):
+class CommentUpdate(BaseRequestModel):
+    comment_text: str
+    assignee: int | None = None
     resolved: bool | None = False

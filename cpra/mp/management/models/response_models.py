@@ -50,7 +50,7 @@ class Task(BaseResponseModel):
 
 
 class CommentCreate(BaseResponseModel):
-    id: str
+    id: int
 
 
 class Comment(CommentCreate):

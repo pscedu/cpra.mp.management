@@ -16,7 +16,7 @@ router = APIRouter(prefix="/comments")
 
 @router.get("/{comment_id}/replies", response_model=List[ResponseComment])
 async def get_comment_replies(
-    comment_id: str,
+    comment_id: int,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     try:
@@ -30,13 +30,13 @@ async def get_comment_replies(
 
 @router.post("/{comment_id}/replies", response_model=ResponseCommentCreate)
 async def create_reply(
-    comment_id: str,
+    comment_id: int,
     reply: RequestComment,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     comment_data = reply.model_dump()
     try:
-        reply = ClickUpController.comment_create_reply(comment_id, comment_data)
+        reply = ClickUpController().comment_create_reply(comment_id, comment_data)
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp reply")
@@ -46,7 +46,7 @@ async def create_reply(
 
 @router.put("/{comment_id}")
 async def update_comment(
-    comment_id: str,
+    comment_id: int,
     request_comment: RequestCommentUpdate,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
@@ -63,7 +63,7 @@ async def update_comment(
 
 @router.delete("/{comment_id}")
 async def delete_comment(
-    comment_id: str,
+    comment_id: int,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     try:
