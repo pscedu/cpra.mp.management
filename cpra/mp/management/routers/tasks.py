@@ -47,7 +47,6 @@ async def get_tasks(
     if statuses:
         params["statuses[]"] = statuses
 
-    print(params)
     try:
         tasks = ClickUpController().task_bulk_get(params)
     except Exception as e:
@@ -55,11 +54,16 @@ async def get_tasks(
         raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
 
     tasks_to_return = []
-    if len(tags) > 0:
-        for task in tasks:
-            # Unique tags for this task
-            task_tags = {tag.get("name") for tag in task.get("tags", [])}
+    exclusion_tags = {"meta_type:simulation_run", "meta_type:subroutine"}
+    for task in tasks:
+        # Unique tags for this task
+        task_tags = {tag.get("name") for tag in task.get("tags", [])}
 
+        # Exclude tasks that contain an exclusion tag.
+        if exclusion_tags.intersection(task_tags):
+            continue
+
+        if len(tags) > 0:
             # Validation criteria is that there needs to exist at least one tag from each unique data_dimension
             # and at least one tag from the general
             # Essentially, each "group" is OR'd and then they're all AND'd together.
@@ -74,11 +78,9 @@ async def get_tasks(
             if or_fail:
                 continue
 
-            if get_comments:
-                task["comments"] = ClickUpController().task_get_comments(task["id"])
-            tasks_to_return.append(task)
-    else:
-        tasks_to_return.extend(tasks)
+        if get_comments:
+            task["comments"] = ClickUpController().task_get_comments(task["id"])
+        tasks_to_return.append(task)
 
     return tasks_to_return
 
@@ -109,6 +111,7 @@ async def create_task(
     task_data = task.model_dump()
 
     try:
+        task_data["tags"].append("meta_type:task")
         task = ClickUpController().task_create(task_data)
     except Exception as e:
         print(repr(e))
