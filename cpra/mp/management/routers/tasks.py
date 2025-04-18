@@ -85,7 +85,7 @@ async def get_tasks(
             comments = ClickUpController().task_get_comments(task['id'])
             for comment in comments:
                 for idx in ['user', 'assignee']:
-                    if len(internal_user := get_users_by_clickup_ids([comment[idx]['id']])) > 0:
+                    if comment[idx] and len(internal_user := get_users_by_clickup_ids([comment[idx]['id']])) > 0:
                         comment[idx] = internal_user[0]
             task['comments'] = comments
 
