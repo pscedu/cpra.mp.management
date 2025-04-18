@@ -128,7 +128,6 @@ class ClickUpController:
         if response.status_code != 200:
             raise Exception(response.json())
 
-
     def comment_get_replies(self, clickup_id):
         comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}/reply"
         response = http_r.get(comment_url, headers=self.app_request_headers)
@@ -136,7 +135,6 @@ class ClickUpController:
             raise Exception(response.json())
 
         return response.json()["comments"]
-
 
     def comment_create_reply(self, clickup_id, comment_data):
         comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}/reply"

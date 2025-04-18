@@ -16,6 +16,7 @@ def get_user(user_info: dict) -> Union[User, None]:
 
     return user
 
+
 def get_users_by_clickup_ids(clickup_ids) -> Union[list[User], list]:
     with Session(engine) as session:
         return session.exec(select(User).where(User.clickup_id.in_(clickup_ids))).all()

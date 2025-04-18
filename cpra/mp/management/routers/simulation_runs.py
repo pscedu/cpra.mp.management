@@ -42,7 +42,7 @@ async def get_simulation_runs(
                 simulation_run_data = simulation_run.model_dump()
                 simulation_run_data["clickup_data"] = task
                 simulation_runs_to_return.append(simulation_run_data)
-            except Exception as e:
+            except Exception:
                 pass
         return simulation_runs_to_return
 
