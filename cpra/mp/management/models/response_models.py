@@ -35,11 +35,8 @@ class SimulationRun(BaseResponseModel):
     clickup_data: dict
 
 
-class CommentCreate(BaseResponseModel):
+class Comment(BaseResponseModel):
     id: int
-
-
-class Comment(CommentCreate):
     comment_text: str
     user: dict
     assignee: Union[User, dict] | None = {}

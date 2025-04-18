@@ -1,6 +1,6 @@
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
 from cpra.mp.management.dependencies import (
@@ -9,9 +9,9 @@ from cpra.mp.management.dependencies import (
 from cpra.mp.management.models.db_models import User as DBUser
 from cpra.mp.management.models.request_models import Comment as RequestComment
 from cpra.mp.management.models.request_models import CommentUpdate as RequestCommentUpdate
-from cpra.mp.management.models.response_models import CommentCreate as ResponseCommentCreate, Comment as ResponseComment
+from cpra.mp.management.models.response_models import Comment as ResponseComment
 
-from cpra.mp.management.controllers.user_controllers import get_users_by_ids, get_users_by_clickup_ids
+from cpra.mp.management.controllers.user_controllers import get_users_by_clickup_ids
 router = APIRouter(prefix="/comments")
 
 
