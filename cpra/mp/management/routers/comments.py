@@ -11,6 +11,7 @@ from cpra.mp.management.models.request_models import Comment as RequestComment
 from cpra.mp.management.models.request_models import CommentUpdate as RequestCommentUpdate
 from cpra.mp.management.models.response_models import CommentCreate as ResponseCommentCreate, Comment as ResponseComment
 
+from cpra.mp.management.controllers.user_controllers import get_users_by_ids, get_users_by_clickup_ids
 router = APIRouter(prefix="/comments")
 
 
@@ -21,6 +22,10 @@ async def get_comment_replies(
 ):
     try:
         replies = ClickUpController().comment_get_replies(comment_id)
+        for reply in replies:
+            for idx in ['user', 'assignee']:
+                if reply[idx] and len(internal_user := get_users_by_clickup_ids([reply[idx]['id']])) > 0:
+                    reply[idx] = internal_user[0]
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not get replies")
@@ -28,7 +33,7 @@ async def get_comment_replies(
     return replies
 
 
-@router.post("/{comment_id}/replies", response_model=ResponseCommentCreate)
+@router.post("/{comment_id}/replies", response_model=ResponseComment)
 async def create_reply(
     comment_id: int,
     reply: RequestComment,
@@ -36,12 +41,17 @@ async def create_reply(
 ):
     comment_data = reply.model_dump()
     try:
-        reply = ClickUpController().comment_create_reply(comment_id, comment_data)
+        new_reply = ClickUpController().comment_create_reply(comment_id, comment_data)
+        replies = ClickUpController().comment_get_replies(comment_id)
+        for reply in replies:
+            if int(new_reply['id']) == int(reply['id']):
+                for idx in ['user', 'assignee']:
+                    if reply[idx] and len(internal_user := get_users_by_clickup_ids([reply[idx]['id']])) > 0:
+                        reply[idx] = internal_user[0]
+                return reply
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp reply")
-
-    return reply
 
 
 @router.put("/{comment_id}")
