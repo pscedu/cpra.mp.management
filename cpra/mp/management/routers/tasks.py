@@ -12,6 +12,9 @@ from cpra.mp.management.models.request_models import TaskUpdate as RequestTaskUp
 from cpra.mp.management.models.request_models import Comment as RequestComment
 from cpra.mp.management.models.response_models import Task as ResponseTask
 
+
+from cpra.mp.management.controllers.user_controllers import get_users_by_ids, get_users_by_clickup_ids
+
 router = APIRouter(prefix="/tasks")
 
 
@@ -80,6 +83,16 @@ async def get_tasks(
 
         if get_comments:
             task["comments"] = ClickUpController().task_get_comments(task["id"])
+
+        # Transformation routine
+        # TODO:
+        #   If the user does not exist in the DB, it should use the dict returned by ClickUp
+        #   Place that logic into a controller rather than repeating it for every route
+        #   For the bulk endpoint, cache the user information so that we don't hit the DB
+        task['assignees'] = get_users_by_clickup_ids(assignee['id'] for assignee in task["assignees"])
+        if len(creator := get_users_by_clickup_ids([task['creator']['id']])) > 0:
+            task['creator'] = creator[0]
+
         tasks_to_return.append(task)
 
     return tasks_to_return
@@ -96,6 +109,11 @@ async def get_task(
         task = ClickUpController().task_get(task_id)
         if get_comments:
             task["comments"] = ClickUpController().task_get_comments(task_id)
+
+        # Transformation routine
+        task['assignees'] = get_users_by_clickup_ids(assignee['id'] for assignee in task["assignees"])
+        if len(creator := get_users_by_clickup_ids([task['creator']['id']])) > 0:
+            task['creator'] = creator[0]
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
@@ -108,11 +126,18 @@ async def create_task(
     task: RequestTask,
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
-    task_data = task.model_dump()
-
     try:
+        task_data = task.model_dump()
+
+        if task_data['assignees']:
+            task_data['assignees'] = [user.clickup_id for user in get_users_by_ids(task_data['assignees'])]
         task_data["tags"].append("meta_type:task")
+
         task = ClickUpController().task_create(task_data)
+
+        # Transformation routine
+        task['assignees'] = get_users_by_clickup_ids([assignee['id'] for assignee in task['assignees']])
+        task['creator'] = current_user
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp Task")
@@ -129,7 +154,16 @@ async def update_task(
     # Get Task from ClickUp
     try:
         task_data = request_task.model_dump()
+        if task_data['assignees']:
+            task_data['assignees'] = [user.clickup_id for user in get_users_by_ids(task_data['assignees'])]
+
         updated_task = ClickUpController().task_update(task_id, task_data)
+
+        # Transformation routine
+        updated_task['assignees'] = get_users_by_clickup_ids([assignee['id'] for assignee in updated_task['assignees']])
+        if len(creator := get_users_by_clickup_ids([updated_task['creator']['id']])) > 0:
+            updated_task['creator'] = creator[0]
+
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not update ClickUp Task")
@@ -163,6 +197,11 @@ async def create_task_comment(
         task = ClickUpController().task_get(task_id)
         ClickUpController().task_create_comment(task_id, comment_data)
         task["comments"] = ClickUpController().task_get_comments(task_id)
+
+        # Transformation routine
+        task['assignees'] = get_users_by_clickup_ids(assignee['id'] for assignee in task["assignees"])
+        if len(creator := get_users_by_clickup_ids([task['creator']['id']])) > 0:
+            task['creator'] = creator[0]
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp Comment")
