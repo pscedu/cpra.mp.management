@@ -3,7 +3,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from cpra.mp.management.database import create_all
-from cpra.mp.management.routers import clickup, comments, login, simulation_runs, tasks, users
+from cpra.mp.management.routers import (
+    clickup,
+    comments,
+    login,
+    simulation_runs,
+    tasks,
+    users,
+)
 from cpra.mp.management.settings import settings
 
 app = FastAPI(root_path="/v1/management")

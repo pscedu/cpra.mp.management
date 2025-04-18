@@ -32,11 +32,25 @@ class ClickUpController:
         if response.status_code == 200:
             response = response.json()
             task = response.get("task", {})
-            self.task_add_tags(task, [f"model_group_id:{simulation_run.model_group_id}", f"scenario_id:{simulation_run.scenario_id}", "meta_type:simulation_run"])
+            self.task_add_tags(
+                task,
+                [
+                    f"model_group_id:{simulation_run.model_group_id}",
+                    f"scenario_id:{simulation_run.scenario_id}",
+                    "meta_type:simulation_run",
+                ],
+            )
 
             # Iterate through subtasks and add tags there as well.
             for subtask in task.get("subtasks", []):
-                self.task_add_tags(subtask, [f"model_group_id:{simulation_run.model_group_id}", f"scenario_id:{simulation_run.scenario_id}", "meta_type:subroutine"])
+                self.task_add_tags(
+                    subtask,
+                    [
+                        f"model_group_id:{simulation_run.model_group_id}",
+                        f"scenario_id:{simulation_run.scenario_id}",
+                        "meta_type:subroutine",
+                    ],
+                )
         else:
             # TODO: What do we actually want to raise here?
             raise Exception(response.json())
