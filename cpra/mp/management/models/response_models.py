@@ -42,8 +42,8 @@ class CommentCreate(BaseResponseModel):
 class Comment(CommentCreate):
     comment_text: str
     user: dict
-    assignee: Union[User, dict]
-    user: Union[User, dict]
+    assignee: Union[User, dict] | None = {}
+    user: Union[User, dict] | None = {}
     date: str
 
 
@@ -52,7 +52,7 @@ class Task(BaseResponseModel):
     name: str
     description: str
     status: dict
-    assignees: list[Union[User, dict]]
+    assignees: list[Union[User, dict]] | None = []
     tags: list
     url: str
     creator: Union[User, dict]
