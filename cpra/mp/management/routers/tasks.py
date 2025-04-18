@@ -82,7 +82,12 @@ async def get_tasks(
                 continue
 
         if get_comments:
-            task["comments"] = ClickUpController().task_get_comments(task["id"])
+            comments = ClickUpController().task_get_comments(task['id'])
+            for comment in comments:
+                for idx in ['user', 'assignee']:
+                    if len(internal_user := get_users_by_clickup_ids([comment[idx]['id']])) > 0:
+                        comment[idx] = internal_user[0]
+            task['comments'] = comments
 
         # Transformation routine
         # TODO:
@@ -108,7 +113,12 @@ async def get_task(
     try:
         task = ClickUpController().task_get(task_id)
         if get_comments:
-            task["comments"] = ClickUpController().task_get_comments(task_id)
+            comments = ClickUpController().task_get_comments(task['id'])
+            for comment in comments:
+                for idx in ['user', 'assignee']:
+                    if len(internal_user := get_users_by_clickup_ids([comment[idx]['id']])) > 0:
+                        comment[idx] = internal_user[0]
+            task['comments'] = comments
 
         # Transformation routine
         task['assignees'] = get_users_by_clickup_ids(assignee['id'] for assignee in task["assignees"])
@@ -196,12 +206,19 @@ async def create_task_comment(
     try:
         task = ClickUpController().task_get(task_id)
         ClickUpController().task_create_comment(task_id, comment_data)
-        task["comments"] = ClickUpController().task_get_comments(task_id)
 
         # Transformation routine
         task['assignees'] = get_users_by_clickup_ids(assignee['id'] for assignee in task["assignees"])
         if len(creator := get_users_by_clickup_ids([task['creator']['id']])) > 0:
             task['creator'] = creator[0]
+
+        comments = ClickUpController().task_get_comments(task_id)
+        for comment in comments:
+            for idx in ['user', 'assignee']:
+                if len(internal_user := get_users_by_clickup_ids([comment[idx]['id']])) > 0:
+                    comment[idx] = internal_user[0]
+        task['comments'] = comments
+
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp Comment")

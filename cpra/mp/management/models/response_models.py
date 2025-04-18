@@ -43,6 +43,7 @@ class Comment(CommentCreate):
     comment_text: str
     user: dict
     assignee: Union[User, dict]
+    user: Union[User, dict]
     date: str
 
 
