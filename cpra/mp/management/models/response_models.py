@@ -1,3 +1,5 @@
+from typing import Union
+
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
@@ -34,15 +36,25 @@ class SimulationRun(BaseResponseModel):
     clickup_data: dict
 
 
+class Comment(BaseResponseModel):
+    id: int
+    comment_text: str
+    user: dict
+    assignee: Union[User, dict] | None = {}
+    user: Union[User, dict] | None = {}
+    date: str
+
+
 class Task(BaseResponseModel):
     id: str
     name: str
     description: str
     status: dict
-    assignees: list
+    assignees: list[Union[User, dict]] | None = []
     tags: list
     url: str
-    creator: dict
+    creator: Union[User, dict]
     date_created: str
     date_updated: str
     date_closed: str | None = None
+    comments: list[Comment] | None = []

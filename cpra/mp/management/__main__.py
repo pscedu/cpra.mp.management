@@ -3,7 +3,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from cpra.mp.management.database import create_all
-from cpra.mp.management.routers import clickup, login, simulation_runs, tasks, users
+from cpra.mp.management.routers import (
+    clickup,
+    comments,
+    login,
+    simulation_runs,
+    tasks,
+    users,
+)
 from cpra.mp.management.settings import settings
 
 app = FastAPI(root_path="/v1/management")
@@ -21,6 +28,7 @@ app.include_router(login.router)
 app.include_router(users.router)
 app.include_router(simulation_runs.router)
 app.include_router(tasks.router)
+app.include_router(comments.router)
 
 
 @app.get("/")
