@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.9.0](https://github.com/pscedu/cpra.mp.management/compare/v0.8.1...v0.9.0) (2025-04-21)
+
+
+### Bug Fixes
+
+* Adjust comment creation for tasks and add getComments flag for get task endpoints ([4c02287](https://github.com/pscedu/cpra.mp.management/commit/4c022875e07f23800829ab675a21a94846a71c7e))
+* Check to make sure that the attribute acutually contains something ([a961ff0](https://github.com/pscedu/cpra.mp.management/commit/a961ff0ac3a01d21090db5f071a5a12e0fa106fd))
+* return empty dicts or lists if None ([f040190](https://github.com/pscedu/cpra.mp.management/commit/f040190ef6a138e0a63a4f02875a86e646bad0d7))
+* Slight mods for bulk sim run gets ([dd0ee6f](https://github.com/pscedu/cpra.mp.management/commit/dd0ee6f430c4b4f2d2f3fd63ced3f4ce860f47d8))
+
 ## [0.8.1](https://github.com/pscedu/cpra.mp.management/compare/v0.8.0...v0.8.1) (2025-04-14)
 
 
