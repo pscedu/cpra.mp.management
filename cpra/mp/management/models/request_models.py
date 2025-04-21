@@ -17,12 +17,6 @@ class RoleTypes(str, Enum):
     admin = "admin"
 
 
-class StatusTypes(str, Enum):
-    backlog = "backlog"
-    in_progress = "in progress"
-    done = "done"
-
-
 class SimulationRunTypes(str, Enum):
     icm = "ICM"
     adcirc = "ADCIRC"
@@ -39,12 +33,12 @@ class User(BaseRequestModel):
 class SimulationRun(BaseRequestModel):
     model_group_id: str
     scenario_id: str
-    status: StatusTypes | None = StatusTypes.backlog
+    status: str
     simulation_run_type: SimulationRunTypes | None = SimulationRunTypes.icm
 
 
 class SimulationRunUpdate(BaseRequestModel):
-    status: StatusTypes | None = None
+    status: str | None = None
 
 
 class Task(BaseRequestModel):
@@ -52,14 +46,14 @@ class Task(BaseRequestModel):
     tags: list[str]
     description: str | None = None
     assignees: list[int] | None = None
-    status: StatusTypes | None = StatusTypes.backlog
+    status: str
 
 
 class TaskUpdate(BaseRequestModel):
     name: str | None = None
     description: str | None = None
     assignees: list[int] | None = None
-    status: StatusTypes | None = None
+    status: str | None = None
 
 
 class Comment(BaseRequestModel):
