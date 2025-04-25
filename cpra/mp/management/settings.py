@@ -29,7 +29,7 @@ class ClickUpSettings(BaseModel):
     api_token: str
     base_api_url: str
     simulation_run_type_template_id_mapping: dict
-    list_id: str
+    list_ids: dict
 
 
 class Settings(BaseSettings):
