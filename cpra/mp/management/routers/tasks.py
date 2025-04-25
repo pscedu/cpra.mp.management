@@ -6,6 +6,7 @@ from cpra.mp.management.controllers.clickup_controller import ClickUpController
 from cpra.mp.management.controllers.user_controllers import (
     get_users_by_clickup_ids,
     get_users_by_ids,
+    get_translated_clickup_users
 )
 from cpra.mp.management.dependencies import get_current_active_user
 from cpra.mp.management.models.db_models import User as DBUser
@@ -57,6 +58,7 @@ async def get_tasks(
 
     tasks_to_return = []
     exclusion_tags = {"meta_type:simulation_run", "meta_type:subroutine"}
+    cached_users = {}
     for task in tasks:
         # Unique tags for this task
         task_tags = {tag.get("name") for tag in task.get("tags", [])}
@@ -84,24 +86,13 @@ async def get_tasks(
             comments = ClickUpController().task_get_comments(task["id"])
             for comment in comments:
                 for idx in ["user", "assignee"]:
-                    if (
-                        comment[idx]
-                        and len(internal_user := get_users_by_clickup_ids([comment[idx]["id"]]))
-                        > 0
-                    ):
-                        comment[idx] = internal_user[0]
+                    if comment[idx]:
+                        comment[idx] = get_translated_clickup_users([comment[idx]], cached_users)[0]
             task["comments"] = comments
 
         # Transformation routine
-        # TODO:
-        #   If the user does not exist in the DB, it should use the dict returned by ClickUp
-        #   Place that logic into a controller rather than repeating it for every route
-        #   For the bulk endpoint, cache the user information so that we don't hit the DB
-        task["assignees"] = get_users_by_clickup_ids(
-            assignee["id"] for assignee in task["assignees"]
-        )
-        if len(creator := get_users_by_clickup_ids([task["creator"]["id"]])) > 0:
-            task["creator"] = creator[0]
+        task["assignees"] = get_translated_clickup_users(task["assignees"], cached_users)
+        task["creator"] = get_translated_clickup_users([task["creator"]], cached_users)[0]
 
         tasks_to_return.append(task)
 
@@ -117,20 +108,19 @@ async def get_task(
     # Get Task from ClickUp
     try:
         task = ClickUpController().task_get(task_id)
+
+        cached_users = {}
         if get_comments:
             comments = ClickUpController().task_get_comments(task["id"])
             for comment in comments:
                 for idx in ["user", "assignee"]:
-                    if len(internal_user := get_users_by_clickup_ids([comment[idx]["id"]])) > 0:
-                        comment[idx] = internal_user[0]
+                    if comment[idx]:
+                        comment[idx] = get_translated_clickup_users([comment[idx]], cached_users)[0]
             task["comments"] = comments
 
         # Transformation routine
-        task["assignees"] = get_users_by_clickup_ids(
-            assignee["id"] for assignee in task["assignees"]
-        )
-        if len(creator := get_users_by_clickup_ids([task["creator"]["id"]])) > 0:
-            task["creator"] = creator[0]
+        task["assignees"] = get_translated_clickup_users(task["assignees"], cached_users)
+        task["creator"] = get_translated_clickup_users([task["creator"]], cached_users)[0]
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
@@ -155,9 +145,7 @@ async def create_task(
         task = ClickUpController().task_create(task_data)
 
         # Transformation routine
-        task["assignees"] = get_users_by_clickup_ids(
-            [assignee["id"] for assignee in task["assignees"]]
-        )
+        task["assignees"] = get_translated_clickup_users(task["assignees"], {})
         task["creator"] = current_user
     except Exception as e:
         print(repr(e))
@@ -183,12 +171,9 @@ async def update_task(
         updated_task = ClickUpController().task_update(task_id, task_data)
 
         # Transformation routine
-        updated_task["assignees"] = get_users_by_clickup_ids(
-            [assignee["id"] for assignee in updated_task["assignees"]]
-        )
-        if len(creator := get_users_by_clickup_ids([updated_task["creator"]["id"]])) > 0:
-            updated_task["creator"] = creator[0]
-
+        cached_users = {}
+        updated_task["assignees"] = get_translated_clickup_users(updated_task["assignees"], cached_users)
+        updated_task["creator"] = get_translated_clickup_users([updated_task["creator"]], cached_users)[0]
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not update ClickUp Task")
@@ -222,20 +207,18 @@ async def create_task_comment(
         task = ClickUpController().task_get(task_id)
         ClickUpController().task_create_comment(task_id, comment_data)
 
+        cached_users = {}
         # Transformation routine
-        task["assignees"] = get_users_by_clickup_ids(
-            assignee["id"] for assignee in task["assignees"]
-        )
-        if len(creator := get_users_by_clickup_ids([task["creator"]["id"]])) > 0:
-            task["creator"] = creator[0]
+        task["assignees"] = get_translated_clickup_users(task["assignees"], cached_users)
+        task["creator"] = get_translated_clickup_users([task["creator"]], cached_users)[0]
+
 
         comments = ClickUpController().task_get_comments(task_id)
         for comment in comments:
             for idx in ["user", "assignee"]:
-                if len(internal_user := get_users_by_clickup_ids([comment[idx]["id"]])) > 0:
-                    comment[idx] = internal_user[0]
+                if comment[idx]:
+                    comment[idx] = get_translated_clickup_users([comment[idx]], cached_users)[0]
         task["comments"] = comments
-
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not create ClickUp Comment")
