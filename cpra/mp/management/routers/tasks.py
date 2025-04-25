@@ -4,9 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
 from cpra.mp.management.controllers.user_controllers import (
-    get_users_by_clickup_ids,
+    get_translated_clickup_users,
     get_users_by_ids,
-    get_translated_clickup_users
 )
 from cpra.mp.management.dependencies import get_current_active_user
 from cpra.mp.management.models.db_models import User as DBUser
@@ -87,7 +86,9 @@ async def get_tasks(
             for comment in comments:
                 for idx in ["user", "assignee"]:
                     if comment[idx]:
-                        comment[idx] = get_translated_clickup_users([comment[idx]], cached_users)[0]
+                        comment[idx] = get_translated_clickup_users([comment[idx]], cached_users)[
+                            0
+                        ]
             task["comments"] = comments
 
         # Transformation routine
@@ -115,7 +116,9 @@ async def get_task(
             for comment in comments:
                 for idx in ["user", "assignee"]:
                     if comment[idx]:
-                        comment[idx] = get_translated_clickup_users([comment[idx]], cached_users)[0]
+                        comment[idx] = get_translated_clickup_users([comment[idx]], cached_users)[
+                            0
+                        ]
             task["comments"] = comments
 
         # Transformation routine
@@ -172,8 +175,12 @@ async def update_task(
 
         # Transformation routine
         cached_users = {}
-        updated_task["assignees"] = get_translated_clickup_users(updated_task["assignees"], cached_users)
-        updated_task["creator"] = get_translated_clickup_users([updated_task["creator"]], cached_users)[0]
+        updated_task["assignees"] = get_translated_clickup_users(
+            updated_task["assignees"], cached_users
+        )
+        updated_task["creator"] = get_translated_clickup_users(
+            [updated_task["creator"]], cached_users
+        )[0]
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not update ClickUp Task")
@@ -211,7 +218,6 @@ async def create_task_comment(
         # Transformation routine
         task["assignees"] = get_translated_clickup_users(task["assignees"], cached_users)
         task["creator"] = get_translated_clickup_users([task["creator"]], cached_users)[0]
-
 
         comments = ClickUpController().task_get_comments(task_id)
         for comment in comments:
