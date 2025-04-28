@@ -23,7 +23,7 @@ class User(BaseResponseModel):
     username: str
     email: str | None = None
     full_name: str | None = None
-    clickup_id: str | None = None
+    clickup_id: int | None = None
     disabled: bool
 
 
