@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/pscedu/cpra.mp.management/compare/v0.9.0...v0.9.1) (2025-04-28)
+
+
+### Bug Fixes
+
+* change clickup_id to int ([8ca87cc](https://github.com/pscedu/cpra.mp.management/commit/8ca87cc11b2d4b170b72eeecea3986aaf32cb584))
+
 ## [0.9.0](https://github.com/pscedu/cpra.mp.management/compare/v0.8.1...v0.9.0) (2025-04-21)
 
 
