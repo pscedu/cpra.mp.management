@@ -22,7 +22,7 @@ def get_translated_clickup_users(clickup_users: list[dict], cached_clickup_user_
     remapped_clickup_users = {}
 
     for clickup_user in clickup_users:
-        clickup_id = str(clickup_user["id"])
+        clickup_id = int(clickup_user["id"])
 
         # If the clickup_id has already been matched, return that mapping
         if cached_mapping := cached_clickup_user_mapping.get(clickup_id):
