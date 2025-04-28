@@ -20,7 +20,8 @@ class ClickUpController:
 
     def simulation_run_create(self, simulation_run):
         task_name = f"{simulation_run.model_group_id} {simulation_run.scenario_id}"
-        task_url = f"{settings.clickup_settings.base_api_url}/list/{self.settings.list_id}/taskTemplate/{self.settings.simulation_run_type_template_id_mapping[simulation_run.simulation_run_type]}"
+        list_id = self.settings.list_ids["simulation_runs"]
+        task_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}/taskTemplate/{self.settings.simulation_run_type_template_id_mapping[simulation_run.simulation_run_type]}"
 
         # The data for the task you want to create
         task_data = {"name": task_name}
@@ -68,7 +69,8 @@ class ClickUpController:
 
     def task_create(self, task_data: dict):
         # Make the POST request to create the task
-        task_url = f"{settings.clickup_settings.base_api_url}/list/{self.settings.list_id}/task"
+        list_id = self.settings.list_ids["tasks"]
+        task_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}/task"
         response = http_r.post(
             task_url, headers=self.app_request_headers, data=json.dumps(task_data)
         )
@@ -97,7 +99,8 @@ class ClickUpController:
         return response.json()
 
     def task_bulk_get(self, params: dict):
-        task_url = f"{settings.clickup_settings.base_api_url}/list/{self.settings.list_id}/task"
+        list_id = self.settings.list_ids["tasks"]
+        task_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}/task"
         response = http_r.get(task_url, headers=self.app_request_headers, params=params)
         if response.status_code != 200:
             raise Exception(response.json())
