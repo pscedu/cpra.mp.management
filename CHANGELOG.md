@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/pscedu/cpra.mp.management/compare/v0.9.1...v0.9.2) (2025-04-28)
+
+
+### Bug Fixes
+
+* make sure to cast the user id to int just in case ([12590d1](https://github.com/pscedu/cpra.mp.management/commit/12590d1e81567c644c46d2ab6b309f76fd380eb9))
+
 ## [0.9.1](https://github.com/pscedu/cpra.mp.management/compare/v0.9.0...v0.9.1) (2025-04-28)
 
 
