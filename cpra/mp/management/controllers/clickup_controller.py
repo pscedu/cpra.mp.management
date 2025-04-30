@@ -15,7 +15,7 @@ class ClickUpController:
 
         self.user_request_headers = {
             "Content-Type": "application/json",
-            "Authorization": user_token,
+            "Authorization": f"Bearer {user_token}",
         }
 
     def simulation_run_create(self, simulation_run):
@@ -72,7 +72,7 @@ class ClickUpController:
         list_id = self.settings.list_ids["tasks"]
         task_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}/task"
         response = http_r.post(
-            task_url, headers=self.app_request_headers, data=json.dumps(task_data)
+            task_url, headers=self.user_request_headers, data=json.dumps(task_data)
         )
 
         if response.status_code == 200:
@@ -110,7 +110,7 @@ class ClickUpController:
     def task_update(self, clickup_id, data_to_update: dict):
         task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}"
         response = http_r.put(
-            task_url, headers=self.app_request_headers, data=json.dumps(data_to_update)
+            task_url, headers=self.user_request_headers, data=json.dumps(data_to_update)
         )
         if response.status_code != 200:
             raise Exception(response.json())
@@ -127,7 +127,7 @@ class ClickUpController:
 
     def task_create_comment(self, clickup_id, comment_data):
         comment_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}/comment"
-        response = http_r.post(comment_url, json=comment_data, headers=self.app_request_headers)
+        response = http_r.post(comment_url, json=comment_data, headers=self.user_request_headers)
         if response.status_code != 200:
             raise Exception(response.json())
 
@@ -135,7 +135,7 @@ class ClickUpController:
 
     def comment_update(self, clickup_id, data_to_update: dict):
         comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}"
-        response = http_r.put(comment_url, json=data_to_update, headers=self.app_request_headers)
+        response = http_r.put(comment_url, json=data_to_update, headers=self.user_request_headers)
         if response.status_code != 200:
             raise Exception(response.json())
 
@@ -155,7 +155,7 @@ class ClickUpController:
 
     def comment_create_reply(self, clickup_id, comment_data):
         comment_url = f"{settings.clickup_settings.base_api_url}/comment/{clickup_id}/reply"
-        response = http_r.post(comment_url, json=comment_data, headers=self.app_request_headers)
+        response = http_r.post(comment_url, json=comment_data, headers=self.user_request_headers)
         if response.status_code != 200:
             raise Exception(response.json())
 
