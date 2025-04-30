@@ -43,9 +43,10 @@ async def create_reply(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     comment_data = reply.model_dump()
+    cu_controller = ClickUpController(user_token=current_user.clickup_access_token)
     try:
-        new_reply = ClickUpController().comment_create_reply(comment_id, comment_data)
-        replies = ClickUpController().comment_get_replies(comment_id)
+        new_reply = cu_controller.comment_create_reply(comment_id, comment_data)
+        replies = cu_controller.comment_get_replies(comment_id)
         for reply in replies:
             if int(new_reply["id"]) == int(reply["id"]):
                 for idx in ["user", "assignee"]:
@@ -66,7 +67,7 @@ async def update_comment(
     # Get Comment from ClickUp
     try:
         comment_data = request_comment.model_dump()
-        ClickUpController().comment_update(comment_id, comment_data)
+        ClickUpController(user_token=current_user.clickup_access_token).comment_update(comment_id, comment_data)
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not update ClickUp Comment")
