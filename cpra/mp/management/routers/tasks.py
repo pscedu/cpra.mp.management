@@ -24,6 +24,7 @@ async def get_tasks(
     statuses: Optional[List[str]] = Query([]),
     get_comments: Optional[bool] = Query(False, alias="getComments"),
 ):
+    cu_controller = ClickUpController()
     # TODO: Add restriction for requiring tags, make it optional for now
     separated_tags = {}
     for tag in tags:
@@ -50,7 +51,7 @@ async def get_tasks(
         params["statuses[]"] = statuses
 
     try:
-        tasks = ClickUpController().task_bulk_get(params)
+        tasks = cu_controller.task_bulk_get(params)
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
@@ -82,7 +83,7 @@ async def get_tasks(
                 continue
 
         if get_comments:
-            comments = ClickUpController().task_get_comments(task["id"])
+            comments = cu_controller.task_get_comments(task["id"])
             for comment in comments:
                 for idx in ["user", "assignee"]:
                     if comment[idx]:
@@ -107,12 +108,13 @@ async def get_task(
     get_comments: Optional[bool] = Query(False, alias="getComments"),
 ):
     # Get Task from ClickUp
+    cu_controller = ClickUpController()
     try:
-        task = ClickUpController().task_get(task_id)
+        task = cu_controller.task_get(task_id)
 
         cached_users = {}
         if get_comments:
-            comments = ClickUpController().task_get_comments(task["id"])
+            comments = cu_controller.task_get_comments(task["id"])
             for comment in comments:
                 for idx in ["user", "assignee"]:
                     if comment[idx]:
@@ -145,7 +147,9 @@ async def create_task(
             ]
         task_data["tags"].append("meta_type:task")
 
-        task = ClickUpController().task_create(task_data)
+        task = ClickUpController(user_token=current_user.clickup_access_token).task_create(
+            task_data
+        )
 
         # Transformation routine
         task["assignees"] = get_translated_clickup_users(task["assignees"], {})
@@ -171,7 +175,9 @@ async def update_task(
                 user.clickup_id for user in get_users_by_ids(task_data["assignees"])
             ]
 
-        updated_task = ClickUpController().task_update(task_id, task_data)
+        updated_task = ClickUpController(user_token=current_user.clickup_access_token).task_update(
+            task_id, task_data
+        )
 
         # Transformation routine
         cached_users = {}
@@ -209,17 +215,18 @@ async def create_task_comment(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     comment_data = comment.model_dump()
+    cu_controller = ClickUpController(user_token=current_user.clickup_access_token)
 
     try:
-        task = ClickUpController().task_get(task_id)
-        ClickUpController().task_create_comment(task_id, comment_data)
+        task = cu_controller.task_get(task_id)
+        cu_controller.task_create_comment(task_id, comment_data)
 
         cached_users = {}
         # Transformation routine
         task["assignees"] = get_translated_clickup_users(task["assignees"], cached_users)
         task["creator"] = get_translated_clickup_users([task["creator"]], cached_users)[0]
 
-        comments = ClickUpController().task_get_comments(task_id)
+        comments = cu_controller.task_get_comments(task_id)
         for comment in comments:
             for idx in ["user", "assignee"]:
                 if comment[idx]:
