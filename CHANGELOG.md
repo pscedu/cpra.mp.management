@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/pscedu/cpra.mp.management/compare/v0.9.2...v0.10.0) (2025-05-06)
+
+
+### Bug Fixes
+
+* Update syntax ([11202e8](https://github.com/pscedu/cpra.mp.management/commit/11202e8951b9f6e0c163fcd53ec82ea7fa7a593b))
+
 ## [0.9.2](https://github.com/pscedu/cpra.mp.management/compare/v0.9.1...v0.9.2) (2025-04-28)
 
 
