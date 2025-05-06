@@ -67,7 +67,9 @@ async def update_comment(
     # Get Comment from ClickUp
     try:
         comment_data = request_comment.model_dump()
-        ClickUpController(user_token=current_user.clickup_access_token).comment_update(comment_id, comment_data)
+        ClickUpController(user_token=current_user.clickup_access_token).comment_update(
+            comment_id, comment_data
+        )
     except Exception as e:
         print(repr(e))
         raise HTTPException(status_code=500, detail="Could not update ClickUp Comment")

@@ -147,7 +147,9 @@ async def create_task(
             ]
         task_data["tags"].append("meta_type:task")
 
-        task = ClickUpController(user_token=current_user.clickup_access_token).task_create(task_data)
+        task = ClickUpController(user_token=current_user.clickup_access_token).task_create(
+            task_data
+        )
 
         # Transformation routine
         task["assignees"] = get_translated_clickup_users(task["assignees"], {})
@@ -173,7 +175,9 @@ async def update_task(
                 user.clickup_id for user in get_users_by_ids(task_data["assignees"])
             ]
 
-        updated_task = ClickUpController(user_token=current_user.clickup_access_token).task_update(task_id, task_data)
+        updated_task = ClickUpController(user_token=current_user.clickup_access_token).task_update(
+            task_id, task_data
+        )
 
         # Transformation routine
         cached_users = {}
