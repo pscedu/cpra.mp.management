@@ -184,9 +184,7 @@ async def update_task(
             cu_controller.task_add_tags({"id": task_id}, task_data["tags"]["add"])
             cu_controller.task_remove_tags({"id": task_id}, task_data["tags"]["rem"])
 
-        updated_task = cu_controller.task_update(
-            task_id, task_data
-        )
+        updated_task = cu_controller.task_update(task_id, task_data)
 
         # Transformation routine
         cached_users = {}
