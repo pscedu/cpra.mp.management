@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/pscedu/cpra.mp.management/compare/v0.10.0...v0.11.0) (2025-06-04)
+
+
+### Features
+
+* bump main ([38608f4](https://github.com/pscedu/cpra.mp.management/commit/38608f46ea8a8d850b6402fd575b8a344c0c6c9f))
+
 ## [0.10.0](https://github.com/pscedu/cpra.mp.management/compare/v0.9.2...v0.10.0) (2025-05-06)
 
 
