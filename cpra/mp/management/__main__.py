@@ -10,6 +10,7 @@ from cpra.mp.management.routers import (
     simulation_runs,
     tasks,
     users,
+    statuses,
 )
 from cpra.mp.management.settings import settings
 
@@ -29,6 +30,7 @@ app.include_router(users.router)
 app.include_router(simulation_runs.router)
 app.include_router(tasks.router)
 app.include_router(comments.router)
+app.include_router(statuses.router)
 
 
 @app.get("/")
