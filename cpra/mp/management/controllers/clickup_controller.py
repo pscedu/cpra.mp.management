@@ -67,6 +67,15 @@ class ClickUpController:
             if response.status_code != 200:
                 raise Exception(response.json())
 
+    def task_remove_tags(self, task, tags: list):
+        for tag in tags:
+            tags_url = f"{settings.clickup_settings.base_api_url}/task/{task.get('id')}/tag/{tag}"
+            response = http_r.delete(
+                tags_url, headers=self.app_request_headers, data=json.dumps(task)
+            )
+            if response.status_code != 200:
+                raise Exception(response.json())
+
     def task_create(self, task_data: dict):
         # Make the POST request to create the task
         list_id = self.settings.list_ids["tasks"]
