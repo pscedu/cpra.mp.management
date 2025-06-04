@@ -8,9 +8,9 @@ from cpra.mp.management.routers import (
     comments,
     login,
     simulation_runs,
+    statuses,
     tasks,
     users,
-    statuses,
 )
 from cpra.mp.management.settings import settings
 

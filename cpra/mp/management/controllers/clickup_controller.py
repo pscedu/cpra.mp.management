@@ -169,6 +169,8 @@ class ClickUpController:
             if response.status_code != 200:
                 raise Exception(response.json())
 
-            statuses[list_type] = [status.get("status") for status in response.json().get("statuses", [])]
+            statuses[list_type] = [
+                status.get("status") for status in response.json().get("statuses", [])
+            ]
 
         return statuses
