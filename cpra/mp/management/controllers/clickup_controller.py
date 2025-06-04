@@ -160,3 +160,17 @@ class ClickUpController:
             raise Exception(response.json())
 
         return response.json()
+
+    def status_bulk_get(self):
+        statuses = {}
+        for list_type, list_id in self.settings.list_ids.items():
+            list_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}"
+            response = http_r.get(list_url, headers=self.app_request_headers)
+            if response.status_code != 200:
+                raise Exception(response.json())
+
+            statuses[list_type] = [
+                status.get("status") for status in response.json().get("statuses", [])
+            ]
+
+        return statuses

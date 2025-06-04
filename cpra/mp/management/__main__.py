@@ -8,6 +8,7 @@ from cpra.mp.management.routers import (
     comments,
     login,
     simulation_runs,
+    statuses,
     tasks,
     users,
 )
@@ -29,6 +30,7 @@ app.include_router(users.router)
 app.include_router(simulation_runs.router)
 app.include_router(tasks.router)
 app.include_router(comments.router)
+app.include_router(statuses.router)
 
 
 @app.get("/")
