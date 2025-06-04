@@ -17,7 +17,7 @@ from cpra.mp.management.models.response_models import Task as ResponseTask
 router = APIRouter(prefix="/statuses")
 
 
-@router.get("/", response_model=list[ResponseTask])
+@router.get("/", response_model=dict)
 async def get_tasks(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
