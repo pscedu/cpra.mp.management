@@ -171,8 +171,11 @@ async def update_task(
     try:
         task_data = request_task.model_dump()
         if task_data["assignees"]:
-            task_data["assignees"] = [
-                user.clickup_id for user in get_users_by_ids(task_data["assignees"])
+            task_data["assignees"]["add"] = [
+                user.clickup_id for user in get_users_by_ids(task_data["assignees"]["add"])
+            ]
+            task_data["assignees"]["rem"] = [
+                user.clickup_id for user in get_users_by_ids(task_data["assignees"]["rem"])
             ]
 
         updated_task = ClickUpController(user_token=current_user.clickup_access_token).task_update(
