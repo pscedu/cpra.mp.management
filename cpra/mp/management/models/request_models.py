@@ -52,8 +52,9 @@ class Task(BaseRequestModel):
 class TaskUpdate(BaseRequestModel):
     name: str | None = None
     description: str | None = None
-    assignees: list[int] | None = None
+    assignees: dict | None = None
     status: str | None = None
+    tags: dict | None = None
 
 
 class Comment(BaseRequestModel):
