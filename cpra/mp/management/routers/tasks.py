@@ -171,18 +171,18 @@ async def update_task(
     cu_controller = ClickUpController(user_token=current_user.clickup_access_token)
     try:
 
-        task_data = request_task.model_dump()
+        task_data = request_task.model_dump(exclude_none=True)
         if task_data.get("assignees"):
             task_data["assignees"]["add"] = [
-                user.clickup_id for user in get_users_by_ids(task_data["assignees"]["add"])
+                user.clickup_id for user in get_users_by_ids(task_data["assignees"].get("add", []))
             ]
             task_data["assignees"]["rem"] = [
-                user.clickup_id for user in get_users_by_ids(task_data["assignees"]["rem"])
+                user.clickup_id for user in get_users_by_ids(task_data["assignees"].get("rem", []))
             ]
 
         if task_data.get("tags"):
-            cu_controller.task_add_tags({"id": task_id}, task_data["tags"]["add"])
-            cu_controller.task_remove_tags({"id": task_id}, task_data["tags"]["rem"])
+            cu_controller.task_add_tags({"id": task_id}, task_data["tags"].get("add", []))
+            cu_controller.task_remove_tags({"id": task_id}, task_data["tags"].get("rem", []))
 
         updated_task = cu_controller.task_update(task_id, task_data)
 
