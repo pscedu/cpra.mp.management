@@ -3,6 +3,7 @@ import json
 import requests as http_r
 
 from cpra.mp.management.settings import settings
+from urllib.parse import urlencode
 
 
 class ClickUpController:
@@ -99,8 +100,14 @@ class ClickUpController:
         if response.status_code != 204:
             raise Exception(response.content)
 
-    def task_get(self, clickup_id, include_subtasks=False):
-        task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}?{'include_subtasks=true' if include_subtasks else ''}"
+    def task_get(self, clickup_id, include_subtasks=False, include_markdown_description=True):
+        params = {}
+        if include_subtasks:
+            params["include_subtasks"] = "true"
+        if include_markdown_description:
+            params["include_markdown_description"] = "true"
+
+        task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}?{urlencode(params)}"
         response = http_r.get(task_url, headers=self.app_request_headers)
         if response.status_code != 200:
             raise Exception(response.json())

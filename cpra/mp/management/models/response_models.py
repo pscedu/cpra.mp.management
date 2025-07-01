@@ -48,7 +48,7 @@ class Comment(BaseResponseModel):
 class Task(BaseResponseModel):
     id: str
     name: str
-    description: str
+    markdown_description: str | None = None
     status: dict
     assignees: list[Union[User, dict]] | None = []
     tags: list
