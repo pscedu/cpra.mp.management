@@ -66,6 +66,6 @@ class Comment(BaseRequestModel):
 
 
 class CommentUpdate(BaseRequestModel):
-    comment_text: str
+    comment: dict | list[dict] | None = None
     assignee: int | None = None
     resolved: bool | None = False
