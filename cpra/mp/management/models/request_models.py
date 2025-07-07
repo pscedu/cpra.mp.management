@@ -60,7 +60,7 @@ class TaskUpdate(BaseRequestModel):
 
 
 class Comment(BaseRequestModel):
-    comment_text: str
+    comment: dict | list[dict] | None = None
     assignee: int | None = None
     notify_all: bool | None = False
 
