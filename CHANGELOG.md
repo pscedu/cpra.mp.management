@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.0](https://github.com/pscedu/cpra.mp.management/compare/v0.12.0...v0.13.0) (2025-07-08)
+
+
+### Features
+
+* **clickup:** add resolved field to comment response ([f3c0563](https://github.com/pscedu/cpra.mp.management/commit/f3c05634b178d58a8cc22efc5365ef748ad2d1ac))
+* **clickup:** replace plain text description with Markdown description ([038dd65](https://github.com/pscedu/cpra.mp.management/commit/038dd65517de19e0ed9b7564583c9777429fde5e))
+* **clickup:** replace plain text description with Markdown description ([153edd9](https://github.com/pscedu/cpra.mp.management/commit/153edd9ddaf1fce4bfb69e9405f17e4d85614e1c))
+* **models:** replace comment_text with comment ([e685479](https://github.com/pscedu/cpra.mp.management/commit/e685479d1a6889d2c25b46c28f15a21a1ddbd7de))
+* **models:** replace comment_text with comment in CommentUpdate ([088ea00](https://github.com/pscedu/cpra.mp.management/commit/088ea007f285759ddb25d425328f7c344212ed03))
+
+
+### Bug Fixes
+
+* **clickup:** look up comment assignee ClickUp ID ([c103808](https://github.com/pscedu/cpra.mp.management/commit/c1038084a17a88325773552ec9eef7b6b938c3f3))
+
 ## [0.12.0](https://github.com/pscedu/cpra.mp.management/compare/v0.11.0...v0.12.0) (2025-06-10)
 
 
