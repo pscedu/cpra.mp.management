@@ -43,6 +43,7 @@ class Comment(BaseResponseModel):
     assignee: Union[User, dict] | None = {}
     user: Union[User, dict] | None = {}
     date: str
+    resolved: bool | None = None
 
 
 class Task(BaseResponseModel):
