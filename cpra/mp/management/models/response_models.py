@@ -38,8 +38,7 @@ class SimulationRun(BaseResponseModel):
 
 class Comment(BaseResponseModel):
     id: int
-    comment_text: str
-    user: dict
+    comment: dict | list[dict]
     assignee: Union[User, dict] | None = {}
     user: Union[User, dict] | None = {}
     date: str
@@ -49,7 +48,7 @@ class Comment(BaseResponseModel):
 class Task(BaseResponseModel):
     id: str
     name: str
-    description: str
+    markdown_description: str | None = None
     status: dict
     assignees: list[Union[User, dict]] | None = []
     tags: list

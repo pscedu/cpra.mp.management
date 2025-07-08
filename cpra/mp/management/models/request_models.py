@@ -45,6 +45,7 @@ class Task(BaseRequestModel):
     name: str
     tags: list[str]
     description: str | None = None
+    markdown_content: str | None = None
     assignees: list[int] | None = None
     status: str
 
@@ -52,18 +53,19 @@ class Task(BaseRequestModel):
 class TaskUpdate(BaseRequestModel):
     name: str | None = None
     description: str | None = None
+    markdown_content: str | None = None
     assignees: dict | None = None
     status: str | None = None
     tags: dict | None = None
 
 
 class Comment(BaseRequestModel):
-    comment_text: str
+    comment: dict | list[dict] | None = None
     assignee: int | None = None
     notify_all: bool | None = False
 
 
 class CommentUpdate(BaseRequestModel):
-    comment_text: str
+    comment: dict | list[dict] | None = None
     assignee: int | None = None
     resolved: bool | None = False
