@@ -3,7 +3,7 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
-from cpra.mp.management.controllers.user_controllers import get_translated_clickup_users
+from cpra.mp.management.controllers.user_controllers import get_translated_clickup_users, get_users_by_ids
 from cpra.mp.management.dependencies import get_current_active_user
 from cpra.mp.management.models.db_models import User as DBUser
 from cpra.mp.management.models.request_models import Comment as RequestComment
@@ -67,6 +67,10 @@ async def update_comment(
     # Get Comment from ClickUp
     try:
         comment_data = request_comment.model_dump()
+        if comment_data["assignee"]:
+            users = get_users_by_ids([comment_data["assignee"]])
+            if users:
+                comment_data["assignee"] = users[0].clickup_id
         ClickUpController(user_token=current_user.clickup_access_token).comment_update(
             comment_id, comment_data
         )
