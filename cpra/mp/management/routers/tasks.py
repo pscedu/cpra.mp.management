@@ -222,6 +222,10 @@ async def create_task_comment(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
 ):
     comment_data = comment.model_dump()
+    if comment_data["assignee"]:
+        users = get_users_by_ids([comment_data["assignee"]])
+        if users:
+            comment_data["assignee"] = users[0].clickup_id
     cu_controller = ClickUpController(user_token=current_user.clickup_access_token)
 
     try:
