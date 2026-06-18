@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/pscedu/cpra.mp.management/compare/v0.13.0...v0.13.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **user:** use case-insensitive matching for email and username ([022b86a](https://github.com/pscedu/cpra.mp.management/commit/022b86a96e0cf3aa43b773b20239bfa29c8127e9))
+
 ## [0.13.0](https://github.com/pscedu/cpra.mp.management/compare/v0.12.0...v0.13.0) (2025-07-08)
 
 
