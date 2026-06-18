@@ -21,9 +21,7 @@ def get_user(user_info: dict) -> Union[User, None]:
     return user
 
 
-def get_translated_clickup_users(
-    clickup_users: list[dict], cached_clickup_user_mapping: dict
-):
+def get_translated_clickup_users(clickup_users: list[dict], cached_clickup_user_mapping: dict):
     translated_users = []
     remapped_clickup_users = {}
 
