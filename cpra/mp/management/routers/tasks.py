@@ -23,6 +23,7 @@ async def get_tasks(
     tags: Optional[List[str]] = Query([]),
     statuses: Optional[List[str]] = Query([]),
     get_comments: Optional[bool] = Query(False, alias="getComments"),
+    include_closed: Optional[bool] = Query(True, alias="includeClosed"),
 ):
     cu_controller = ClickUpController()
     # TODO: Add restriction for requiring tags, make it optional for now
@@ -49,6 +50,9 @@ async def get_tasks(
 
     if statuses:
         params["statuses[]"] = statuses
+
+    if include_closed:
+        params["include_closed"] = "true"
 
     try:
         tasks = cu_controller.task_bulk_get(params)
