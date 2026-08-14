@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/pscedu/cpra.mp.management/compare/v0.13.1...v0.14.0) (2026-08-14)
+
+
+### Features
+
+* **tasks:** include closed tasks in results by default ([306b7b4](https://github.com/pscedu/cpra.mp.management/commit/306b7b46a5fd52abfb892f1a04a5a2705cf91ad5))
+* **tasks:** include closed tasks in results by default ([9a1e90b](https://github.com/pscedu/cpra.mp.management/commit/9a1e90b7b16360b4a3b72b4a77e0ee98391972b8))
+
 ## [0.13.1](https://github.com/pscedu/cpra.mp.management/compare/v0.13.0...v0.13.1) (2026-06-18)
 
 
