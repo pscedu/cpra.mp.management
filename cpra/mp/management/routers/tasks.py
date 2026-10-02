@@ -61,7 +61,7 @@ async def get_tasks(
         raise HTTPException(status_code=500, detail="ClickUp Task could not be found.")
 
     tasks_to_return = []
-    exclusion_tags = {"meta_type:simulation_run", "meta_type:subroutine"}
+    exclusion_tags = {ClickUpController.SIMULATION_RUN_TAG, ClickUpController.SUBROUTINE_TAG}
     cached_users = {}
     for task in tasks:
         # Unique tags for this task
@@ -149,7 +149,7 @@ async def create_task(
             task_data["assignees"] = [
                 user.clickup_id for user in get_users_by_ids(task_data["assignees"])
             ]
-        task_data["tags"].append("meta_type:task")
+        task_data["tags"].append(ClickUpController.TASK_TAG)
 
         task = ClickUpController(user_token=current_user.clickup_access_token).task_create(
             task_data

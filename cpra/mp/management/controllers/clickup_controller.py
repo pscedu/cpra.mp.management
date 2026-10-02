@@ -7,6 +7,10 @@ from cpra.mp.management.settings import settings
 
 
 class ClickUpController:
+    SIMULATION_RUN_TAG = "meta_type:simulation_run"
+    SUBROUTINE_TAG = "meta_type:subroutine"
+    TASK_TAG = "meta_type:task"
+
     def __init__(self, user_token=None):
         self.settings = settings.clickup_settings
         self.app_request_headers = {
@@ -39,7 +43,7 @@ class ClickUpController:
                 [
                     f"model_group_id:{simulation_run.model_group_id}",
                     f"scenario_id:{simulation_run.scenario_id}",
-                    "meta_type:simulation_run",
+                    self.SIMULATION_RUN_TAG,
                 ],
             )
 
@@ -50,7 +54,7 @@ class ClickUpController:
                     [
                         f"model_group_id:{simulation_run.model_group_id}",
                         f"scenario_id:{simulation_run.scenario_id}",
-                        "meta_type:subroutine",
+                        self.SUBROUTINE_TAG,
                     ],
                 )
         else:
@@ -116,8 +120,8 @@ class ClickUpController:
 
         return response.json()
 
-    def task_bulk_get(self, params: dict):
-        list_id = self.settings.list_ids["tasks"]
+    def task_bulk_get(self, params: dict, list_key: str = "tasks"):
+        list_id = self.settings.list_ids[list_key]
         task_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}/task"
         response = http_r.get(task_url, headers=self.app_request_headers, params=params)
         if response.status_code != 200:
