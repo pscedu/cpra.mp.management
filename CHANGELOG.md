@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.0](https://github.com/pscedu/cpra.mp.management/compare/v0.14.0...v0.15.0) (2026-10-05)
+
+
+### Features
+
+* add support for grabbing simulation runs using tags ([4248fa8](https://github.com/pscedu/cpra.mp.management/commit/4248fa8ff3febbe3ea60ffb03304318d04e107f6))
+* add support for grabbing simulation runs using tags ([31200c2](https://github.com/pscedu/cpra.mp.management/commit/31200c2cb89c36889ecf29ddacf0627f3cea6c5d))
+
 ## [0.14.0](https://github.com/pscedu/cpra.mp.management/compare/v0.13.1...v0.14.0) (2026-08-14)
 
 
