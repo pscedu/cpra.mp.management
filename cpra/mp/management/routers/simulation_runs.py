@@ -1,6 +1,6 @@
-from typing import Annotated
+from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from cpra.mp.management.controllers.clickup_controller import ClickUpController
@@ -27,23 +27,98 @@ router = APIRouter(prefix="/simulation_runs")
 @router.get("/", response_model=list[ResponseSimulationRun])
 async def get_simulation_runs(
     current_user: Annotated[DBUser, Depends(get_current_active_user)],
+    tags: Optional[List[str]] = Query([]),
+    statuses: Optional[List[str]] = Query([]),
 ):
+    cu_controller = ClickUpController()
+    separated_tags = {}
+    for tag in tags:
+        if tag.count(":") != 1:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid tag '{tag}'. Tags must contain exactly one colon (key:value).",
+            )
+        data_dimension_key = tag.split(":")[0]
+        separated_tags.setdefault(data_dimension_key, []).append(tag)
+
+    # The ClickUp tags[] filter is OR'd, so only one data dimension can be used to narrow the request.
+    # Remaining dimensions (and meta_type) are enforced below. Simulation Runs and their Subroutine
+    # subtasks are the only entries wanted, so with no usable dimension those two meta_types are requested.
+    filter_key = next(
+        (key for key in ("scenario_id", "model_group_id") if key in separated_tags),
+        next((key for key in separated_tags if key != "meta_type"), None),
+    )
+    if filter_key:
+        tags_to_filter = list(separated_tags[filter_key])
+        if filter_key not in ("scenario_id", "model_group_id"):
+            # Subroutines are only guaranteed to carry the scenario_id and model_group_id tags.
+            tags_to_filter.append(ClickUpController.SUBROUTINE_TAG)
+    else:
+        tags_to_filter = [ClickUpController.SIMULATION_RUN_TAG, ClickUpController.SUBROUTINE_TAG]
+
+    # Subtasks are returned as top level tasks by the bulk endpoint, they get nested back in below.
+    # Statuses are filtered below instead of in the request, because a statuses[] filter would also
+    # drop subtasks whose status differs from their parent's.
+    params = {"subtasks": "true", "include_markdown_description": "true", "tags[]": tags_to_filter}
+
+    try:
+        tasks = cu_controller.task_bulk_get(params, list_key="simulation_runs")
+    except Exception as e:
+        print(repr(e))
+        raise HTTPException(status_code=500, detail="ClickUp Simulation Runs could not be found.")
+
+    status_filter = {status.lower() for status in statuses}
+    tasks_by_clickup_id = {}
+    subtasks_by_parent_id = {}
+    for task in tasks:
+        parent_id = task.get("parent")
+        if parent_id:
+            subtasks_by_parent_id.setdefault(parent_id, []).append(task)
+            continue
+
+        # Unique tags for this task
+        task_tags = {tag.get("name") for tag in task.get("tags", [])}
+
+        if ClickUpController.SIMULATION_RUN_TAG not in task_tags:
+            continue
+
+        if status_filter and task["status"]["status"].lower() not in status_filter:
+            continue
+
+        if len(tags) > 0:
+            # Validation criteria is that there needs to exist at least one tag from each unique data_dimension
+            # and at least one tag from the general
+            # Essentially, each "group" is OR'd and then they're all AND'd together.
+            # Naive solution is to iterate over each data_dimension and general and perform intersection checks
+            # If there is an intersection, then we're good, otherwise fail out
+            or_fail = False
+            for _, tag_group in separated_tags.items():
+                if not set(tag_group).intersection(task_tags):
+                    or_fail = True
+                    break
+
+            if or_fail:
+                continue
+
+        tasks_by_clickup_id[task["id"]] = task
+
+    for clickup_id, task in tasks_by_clickup_id.items():
+        task["subtasks"] = subtasks_by_parent_id.get(clickup_id, [])
+
+    if not tasks_by_clickup_id:
+        return []
+
     simulation_runs_to_return = []
-    # TODO: Optimization to use the bulk GET endpoint and search based on tags.
-    # This will not support having very many Simulation Runs.
     with Session(engine) as session:
-        simulation_runs = session.exec(select(DBSimulationRun)).all()
+        # Only fetch the DB rows that correspond to the ClickUp tasks that matched.
+        simulation_runs = session.exec(
+            select(DBSimulationRun).where(DBSimulationRun.clickup_id.in_(tasks_by_clickup_id))
+        ).all()
         for simulation_run in simulation_runs:
-            # Get simulation runs from ClickUp
-            try:
-                task = ClickUpController().task_get(
-                    simulation_run.clickup_id, include_subtasks=True
-                )
-                simulation_run_data = simulation_run.model_dump()
-                simulation_run_data["clickup_data"] = task
-                simulation_runs_to_return.append(simulation_run_data)
-            except Exception:
-                pass
+            simulation_run_data = simulation_run.model_dump()
+            simulation_run_data["clickup_data"] = tasks_by_clickup_id[simulation_run.clickup_id]
+            simulation_runs_to_return.append(simulation_run_data)
+
         return simulation_runs_to_return
 
 
