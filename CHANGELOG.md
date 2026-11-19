@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1](https://github.com/pscedu/cpra.mp.management/compare/v0.16.0...v0.16.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* update python versions ([c129a37](https://github.com/pscedu/cpra.mp.management/commit/c129a378cd9add64c77ef2da8dc36f6db77d3637))
+
 ## [0.16.0](https://github.com/pscedu/cpra.mp.management/compare/v0.15.0...v0.16.0) (2026-11-19)
 
 
