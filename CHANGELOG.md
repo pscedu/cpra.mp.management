@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.0](https://github.com/pscedu/cpra.mp.management/compare/v0.15.0...v0.16.0) (2026-11-19)
+
+
+### Features
+
+* **clickup:** add support for getting multiple pages of tasks ([3975160](https://github.com/pscedu/cpra.mp.management/commit/3975160cb4e294120344c57e097070243413884c))
+* **clickup:** add support for getting multiple pages of tasks ([d4ccf91](https://github.com/pscedu/cpra.mp.management/commit/d4ccf9189afe87200c7aee980ad9f4e86117800a))
+
 ## [0.15.0](https://github.com/pscedu/cpra.mp.management/compare/v0.14.0...v0.15.0) (2026-10-05)
 
 
