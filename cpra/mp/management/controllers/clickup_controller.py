@@ -123,11 +123,23 @@ class ClickUpController:
     def task_bulk_get(self, params: dict, list_key: str = "tasks"):
         list_id = self.settings.list_ids[list_key]
         task_url = f"{settings.clickup_settings.base_api_url}/list/{list_id}/task"
-        response = http_r.get(task_url, headers=self.app_request_headers, params=params)
-        if response.status_code != 200:
-            raise Exception(response.json())
 
-        return response.json()["tasks"]
+        # ClickUp returns at most 100 tasks per page, so request pages until the last one.
+        tasks = []
+        page = 0
+        while True:
+            response = http_r.get(
+                task_url, headers=self.app_request_headers, params={**params, "page": page}
+            )
+            if response.status_code != 200:
+                raise Exception(response.json())
+
+            data = response.json()
+            page_tasks = data["tasks"]
+            tasks.extend(page_tasks)
+            if data.get("last_page", True) or not page_tasks:
+                return tasks
+            page += 1
 
     def task_update(self, clickup_id, data_to_update: dict):
         task_url = f"{settings.clickup_settings.base_api_url}/task/{clickup_id}"
